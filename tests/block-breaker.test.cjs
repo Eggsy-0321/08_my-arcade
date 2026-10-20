@@ -146,3 +146,29 @@ test('PCキー・マウスとAndroid相当pointer入力、自動停止の配線�
   u.click('retry'); canvas.handlers.pointerdown({ ...pointer, pointerType: 'mouse', button: 0, clientX: 150 });
   assert.equal(u.g.paddle, 150); assert.equal(u.g.state, 'PLAYING');
 });
+
+
+test('終了画面だけにHOMEを表示し、RETRYとPAUSEの状態に追従する', () => {
+  const u = ui(), home = u.node('result-home');
+  assert.equal(home.hidden, true); // START
+  u.click('action'); assert.equal(home.hidden, true); // READY
+  u.click('pause'); assert.equal(home.hidden, true); // PAUSED before launch
+  u.click('action'); u.click('launch'); assert.equal(home.hidden, true); // PLAYING
+  u.click('pause'); assert.equal(home.hidden, true); // PAUSED during play
+  u.click('action');
+  for (let i = 0; i < 3; i++) { u.g.miss(); u.g.launch(); }
+  u.tick(0); assert.equal(home.hidden, false); assert.equal(u.node('action').textContent, 'RETRY ↻');
+  u.click('action'); assert.equal(home.hidden, true); // RETRY from GAME OVER
+  u.click('launch'); u.g.blocks = [{ x: 20, y: 64, w: 42, h: 18, row: 0 }];
+  u.g.destroy(0); u.tick(0);
+  assert.equal(home.hidden, false); assert.equal(u.node('action').textContent, 'RETRY ↻');
+  u.click('action'); assert.equal(home.hidden, true); // RETRY from ALL CLEAR
+});
+test('終了画面HOMEはRETRYの後に置いた相対リンクでPagesサブパス内のトップへ戻る', () => {
+  const html = fs.readFileSync('games/block-breaker/index.html', 'utf8');
+  const anchor = html.match(/<a id="result-home" href="([^"]+)" hidden>([^<]+)<\/a>/);
+  assert.ok(anchor); assert.equal(anchor[1], '../../index.html'); assert.equal(anchor[2], '← MY ARCADEへ戻る');
+  assert.ok(html.indexOf('id="action"') < html.indexOf('id="result-home"'));
+  assert.equal(new URL(anchor[1], 'https://Eggsy-0321.github.io/08_my-arcade/games/block-breaker/index.html').href,
+    'https://eggsy-0321.github.io/08_my-arcade/index.html');
+});

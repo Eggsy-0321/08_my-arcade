@@ -22,6 +22,7 @@ with sync_playwright() as p:
         assert page.locator('#stage').inner_text()=='1/1'
         page.wait_for_function('typeof BlockBreaker !== "undefined"')
         page.evaluate('''() => {const update=BlockBreaker.Game.prototype.update;BlockBreaker.Game.prototype.update=function(dt){window.g=this;return update.call(this,dt);};tick(16);}''')
+        assert not page.locator('#result-home').is_visible()
         page.locator('#action').click();page.evaluate('tick(1000)')
         assert page.locator('#time').inner_text()=='00:00.00'
         if mobile:
@@ -40,6 +41,7 @@ with sync_playwright() as p:
             page.keyboard.press('Space')
         page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:01.00'
         page.locator('#pause').click();page.evaluate('tick(3000)');assert page.locator('#time').inner_text()=='00:01.00'
+        assert not page.locator('#result-home').is_visible()
         page.locator('#action').click();page.evaluate('tick(100)')
         page.evaluate('g.ball={x:20,y:585,vx:0,vy:319};tick(16)')
         assert page.locator('#life').inner_text()=='2';assert page.evaluate('g.misses')==1
@@ -52,6 +54,14 @@ with sync_playwright() as p:
         page.locator('#launch').click()
         page.evaluate('for(let i=0;i<2;i++){g.miss();g.launch();}tick(16);')
         assert page.locator('#screen-title').inner_text()=='GAME OVER'
+        def check_result_actions():
+            retry=page.locator('#action');home=page.locator('#result-home')
+            assert retry.is_visible() and retry.inner_text()=='RETRY ↻'
+            assert home.is_visible() and home.get_attribute('href')=='../../index.html'
+            button=retry.bounding_box();link=home.bounding_box()
+            assert link['height']>=44 and link['y']>=button['y']+button['height']+8
+            assert link['x']>=0 and link['x']+link['width']<=page.evaluate('innerWidth')
+        check_result_actions()
         assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")') is None
         page.locator('#action').click();page.locator('#launch').click();page.evaluate('tick(500)')
         clear='g.blocks=[{x:20,y:64,w:42,h:18,row:0}];g.destroy(0);tick(16);'
@@ -59,6 +69,7 @@ with sync_playwright() as p:
         assert page.evaluate('g.stage')==1
         assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:best")')=='123456'
         assert page.locator('#screen-title').inner_text()=='ALL CLEAR'
+        check_result_actions()
         best=page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")');assert float(best)==500
         page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:00.50'
         page.locator('#retry').click();assert page.locator('#time').inner_text()=='00:00.00'
@@ -74,7 +85,11 @@ with sync_playwright() as p:
             assert page.evaluate('g.state')=='READY'
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60);page.evaluate('tick(16)')
         page.screenshot(path=f'/tmp/block-breaker-{mobile}.png')
-        page.get_by_role('link',name='← HOME / MY ARCADE').click()
+        for width in [320,360,390,430]:
+            page.set_viewport_size({'width':width,'height':844});page.wait_for_timeout(60)
+            page.evaluate('g.state="ALL CLEAR";tick(0)');check_result_actions()
+        page.get_by_role('link',name='← MY ARCADEへ戻る',exact=True).click()
+        page.wait_for_url(BASE+'index.html')
         page.get_by_role('link',name='STACK TOWERを開く',exact=False).click()
         page.locator('#start').click();page.evaluate('tick(720)');page.locator('canvas').click()
         assert page.locator('#score').inner_text()=='1'

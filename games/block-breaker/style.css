@@ -21,6 +21,7 @@ button { font: bold 11px 'Courier New', monospace; color: #d9faff; border: 1px s
 button:hover { background: #223553; } button:disabled { opacity: .4; cursor: default; }
 button:focus-visible, a:focus-visible, canvas:focus-visible { outline: 2px solid #ff7dce; outline-offset: 3px; }
 #action { padding: 0 36px; margin-top: 12px; color: #080e20; background: #68edfa; border-color: #68edfa; }
+#result-home { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; max-width: 100%; margin-top: 12px; padding: 12px 16px; font-size: 12px; touch-action: manipulation; }
 #feedback { position: absolute; bottom: 35px; width: 100%; text-align: center; pointer-events: none; color: #85ecfb; font-size: 11px; letter-spacing: 1px; }
 .controls { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 7px; margin: 12px 0; }
 #launch { color: #68edfa; border-color: #398c9c; }
