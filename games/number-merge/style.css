@@ -1,0 +1,45 @@
+:root { color-scheme: dark; font-family: 'Courier New', monospace; background: #080e20; color: #edf8ff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100svh; background: radial-gradient(ellipse at 50% 25%, #1c2448, #080e20 70%); }
+.cabinet { width: min(100% - 24px, 460px); margin: 18px auto; }
+header, footer { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 10px; color: #91a1bf; letter-spacing: .6px; }
+a { color: #89eefd; text-decoration: none; padding: 8px 0; }
+.marquee { display: flex; align-items: center; justify-content: space-between; color: #65efff; border-block: 1px solid #305176; margin: 10px 0 14px; padding: 14px 5px; text-shadow: 0 0 16px #21cadb80; }
+h1 { font-size: clamp(19px, 5.5vw, 27px); letter-spacing: 1px; margin: 0; }
+.hud { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; font-size: 10px; letter-spacing: 1px; color: #8b9bbb; }
+.hud strong { display: block; margin-top: 5px; font-size: clamp(20px, 6vw, 28px); letter-spacing: 0; color: #e7faff; font-variant-numeric: tabular-nums; }
+#time { color: #65efff; }
+.arena { position: relative; border: 1px solid #36567b; box-shadow: 0 0 24px #2ec2ff12; background: #090f23; }
+#board { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; aspect-ratio: 1; touch-action: none; user-select: none; overscroll-behavior: contain; }
+.cell { background: #131e36; border: 1px solid #223455; border-radius: 5px; }
+.tile { position: absolute; display: grid; place-items: center; width: calc((100% - 44px) / 4); height: calc((100% - 44px) / 4); left: calc(10px + var(--col) * ((100% - 12px) / 4)); top: calc(10px + var(--row) * ((100% - 12px) / 4)); border: 1px solid #58cde9; border-radius: 5px; background: #16415c; color: #effdff; font-size: clamp(24px, 7vw, 38px); font-weight: bold; text-shadow: 0 1px 3px #0008; }
+.tile[data-value="4"] { background: #23577e; }
+.tile[data-value="8"] { background: #344a92; }
+.tile[data-value="16"] { background: #4b3e91; }
+.tile[data-value="32"] { background: #663d94; }
+.tile[data-value="64"] { background: #7a3688; }
+.tile[data-value="128"], .tile[data-value="256"] { background: #833e82; border-color: #f08edc; }
+.tile[data-value="512"], .tile[data-value="1024"] { background: #3c458f; border-color: #be9aff; box-shadow: inset 0 0 16px #a875ff44; }
+.tile[data-value="2048"] { background: #176073; border-color: #8cf8ff; box-shadow: 0 0 20px #65efff66; }
+.tile[data-value="1024"], .tile[data-value="2048"] { font-size: clamp(21px, 6vw, 32px); }
+.ghost { z-index: 1; pointer-events: none; }
+.overlay { z-index: 2; position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #080e20f2; padding: 12px; text-align: center; }
+[hidden] { display: none !important; }
+.eyebrow { color: #65efff; font-size: 10px; letter-spacing: 2px; margin: 4px 0; }
+h2 { font-size: clamp(28px, 9vw, 44px); line-height: 1.08; margin: 12px 0; color: #fff; text-shadow: 3px 3px #943cb5; }
+#message { font-size: 12px; line-height: 1.6; margin: 6px 0; white-space: pre-line; }
+.record { color: #a6b6d4; font-size: 12px; margin: 8px 0; }
+.record strong { color: #e7faff; }
+#new-best { color: #85f4ff; font-size: 11px; margin: 4px 0; }
+.hint { font-family: sans-serif; color: #98a9c7; font-size: 11px; line-height: 1.8; margin: 10px 0 0; }
+button, .button { display: inline-grid; place-items: center; font: bold 12px 'Courier New', monospace; color: #d9faff; border: 1px solid #426485; background: #121e35; border-radius: 4px; min-height: 44px; padding: 0 24px; cursor: pointer; touch-action: manipulation; }
+button:hover, .button:hover { background: #223553; }
+button:focus-visible, a:focus-visible, #board:focus-visible { outline: 2px solid #ff7dce; outline-offset: 3px; }
+#start, #retry { color: #080e20; background: #68edfa; border-color: #68edfa; }
+#start, .result-actions { margin-top: 8px; }
+.result-actions { display: flex; gap: 10px; }
+.instructions { display: flex; justify-content: space-between; font-size: 11px; color: #98a9c7; margin: 14px 0; }
+.instructions b { color: #bd9aff; }
+footer { padding: 6px 0; font-size: 9px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@media (max-width: 350px) { .cabinet { width: calc(100% - 16px); margin: 8px auto; } h2 { margin: 8px 0; } .hint { font-size: 10px; } }

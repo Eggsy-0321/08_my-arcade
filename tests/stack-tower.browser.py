@@ -28,7 +28,7 @@ with sync_playwright() as p:
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(BASE)
     page.locator('#game-list .cabinet').last.wait_for()
-    assert page.locator('#game-list .cabinet').count() == 2
+    assert page.locator('#game-list .cabinet').count() == 4
     page.get_by_role('link', name='STACK TOWERを開く', exact=False).click()
     page.wait_for_function('typeof StackTowerRules !== "undefined"')
     # Observe production rule calls without adding a debug API to the game.

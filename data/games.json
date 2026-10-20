@@ -25,5 +25,14 @@
     "thumbnail": "./games/block-breaker/thumbnail.svg",
     "url": "./games/block-breaker/index.html",
     "status": "published"
+  },
+  {
+    "id": "number-merge",
+    "title": "NUMBER MERGE",
+    "description": "同じ数字を合体して2048へ。最速クリアを目指す数字パズル。",
+    "category": "パズル",
+    "thumbnail": "./games/number-merge/thumbnail.svg",
+    "url": "./games/number-merge/index.html",
+    "status": "published"
   }
 ]

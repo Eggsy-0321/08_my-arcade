@@ -14,7 +14,7 @@ with sync_playwright() as p:
         context.add_init_script(CLOCK)
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==3
+        assert page.locator('#game-list .cabinet').count()==4
         page.get_by_role('link',name='BLOCK BREAKERを開く',exact=False).click()
         page.evaluate('localStorage.setItem("my-arcade:block-breaker:best","123456")')
         page.reload()
@@ -34,12 +34,14 @@ with sync_playwright() as p:
             assert page.evaluate('g.paddle')>240
             session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
             assert page.evaluate('g.state')=='READY'
-            page.locator('#launch').tap()
+            session.detach()
+            # Keep raw CDP touch gestures separate from button activation.
+            page.locator('#launch').click()
         else:
             page.keyboard.down('ArrowLeft');page.evaluate('tick(100)');page.keyboard.up('ArrowLeft')
             assert page.evaluate('g.paddle')<200
             page.keyboard.press('Space')
-        page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:01.00'
+        page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:01.00', page.evaluate('({state:g.state,time:g.time(),hidden:document.hidden})')
         page.locator('#pause').click();page.evaluate('tick(3000)');assert page.locator('#time').inner_text()=='00:01.00'
         assert not page.locator('#result-home').is_visible()
         page.locator('#action').click();page.evaluate('tick(100)')
@@ -77,6 +79,8 @@ with sync_playwright() as p:
         assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")')==best
         page.locator('#mute').click();assert page.locator('#mute').get_attribute('aria-pressed')=='true'
         page.reload();assert page.locator('#best').inner_text()=='00:00.50'
+        # Reload creates a new realm; restore test-only instance observation.
+        page.evaluate('''() => {const update=BlockBreaker.Game.prototype.update;BlockBreaker.Game.prototype.update=function(dt){window.g=this;return update.call(this,dt);};tick(16);}''')
         assert page.locator('#mute').get_attribute('aria-pressed')=='true'
         page.locator('#action').click();page.evaluate('tick(16)')
         for w,h in [(320,568),(844,390),(430,932),(1100,844)]:
@@ -87,7 +91,7 @@ with sync_playwright() as p:
         page.screenshot(path=f'/tmp/block-breaker-{mobile}.png')
         for width in [320,360,390,430]:
             page.set_viewport_size({'width':width,'height':844});page.wait_for_timeout(60)
-            page.evaluate('g.state="ALL CLEAR";tick(0)');check_result_actions()
+            page.evaluate('g.state="ALL CLEAR";tick(16)');check_result_actions()
         page.get_by_role('link',name='← MY ARCADEへ戻る',exact=True).click()
         page.wait_for_url(BASE+'index.html')
         page.get_by_role('link',name='STACK TOWERを開く',exact=False).click()
