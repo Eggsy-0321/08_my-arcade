@@ -59,6 +59,7 @@
     $('mute').textContent = `MUTE ${muted ? 'ON' : 'OFF'}`; $('mute').setAttribute('aria-pressed', String(muted));
     const overlay = ['START', 'PAUSED', 'GAME OVER', 'ALL CLEAR'].includes(game.state);
     $('overlay').hidden = !overlay;
+    $('result-home').hidden = !['GAME OVER', 'ALL CLEAR'].includes(game.state);
     if (lastState !== game.state && overlay) {
       if (game.state === 'PAUSED') {
         $('eyebrow').textContent = 'TAKE A BREAK'; $('screen-title').textContent = 'PAUSED';
