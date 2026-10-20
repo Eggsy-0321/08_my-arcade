@@ -1,0 +1,11 @@
+[
+  {
+    "id": "sample",
+    "title": "SAMPLE GAME",
+    "description": "はじめの一台。ゲームの起動を確認できるサンプルページです。",
+    "category": "サンプル",
+    "thumbnail": "",
+    "url": "./games/sample/index.html",
+    "status": "published"
+  }
+]

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10101d">
+  <meta name="description" content="小さなゲームと出会う、ドット絵のWebゲームセンター。好きな筐体を選んで遊ぼう。">
+  <title>MY ARCADE — 小さなゲームセンター</title>
+  <link rel="stylesheet" href="./css/arcade.css">
+  <script src="./js/arcade.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#games">ゲーム一覧へスキップ</a>
+  <header class="site-header">
+    <a class="brand" href="./index.html" aria-label="MY ARCADE ホーム"><span class="brand-icon" aria-hidden="true">▦</span> MY ARCADE<span class="brand-dot">®</span></a>
+    <span class="open-sign"><span aria-hidden="true"></span> OPEN / いつでもプレイ</span>
+  </header>
+
+  <main>
+    <section class="welcome" aria-labelledby="welcome-title">
+      <div class="wall-light wall-light-left" aria-hidden="true"></div>
+      <div class="wall-light wall-light-right" aria-hidden="true"></div>
+      <p class="eyebrow">A LITTLE ESCAPE. A LITTLE PLAY.</p>
+      <h1 id="welcome-title" class="neon-sign">MY <span>ARCADE</span></h1>
+      <p class="welcome-copy">ようこそ、あなたのゲームセンターへ。</p>
+      <p class="welcome-note">気になる筐体を選んで、ひとやすみ。</p>
+      <div class="welcome-rule" aria-hidden="true"><span>✦</span></div>
+    </section>
+
+    <section id="games" class="arcade-room" aria-labelledby="games-title" tabindex="-1">
+      <div class="section-heading">
+        <div><p class="eyebrow">CHOOSE YOUR CABINET</p><h2 id="games-title">ゲームを選ぶ<span class="heading-dot">.</span></h2></div>
+        <span id="game-count" class="game-count">LOADING…</span>
+      </div>
+      <p id="load-status" class="load-status" role="status" aria-live="polite">筐体の電源を入れています…</p>
+      <div id="game-list" class="game-grid" aria-busy="true"></div>
+      <noscript><p class="load-status">ゲーム一覧を表示するには、JavaScriptを有効にしてください。</p></noscript>
+      <div class="room-instructions"><span aria-hidden="true">↳</span> 筐体をクリック / タップでスタート<span class="keyboard-note">TABで選択 · ENTERで決定</span></div>
+    </section>
+  </main>
+
+  <footer class="site-footer"><span>MY ARCADE <span class="footer-cross" aria-hidden="true">✚</span> SMALL GAMES, GOOD TIMES.</span><span>また、ここで遊ぼう。</span></footer>
+</body>
+</html>
