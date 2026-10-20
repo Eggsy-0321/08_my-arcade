@@ -9,11 +9,6 @@ window.testNow=0;window.frames=[];
 performance.now=()=>testNow;
 requestAnimationFrame=cb=>{frames.push(cb);return 1;};
 window.tick=ms=>{testNow+=ms;frames.splice(0).forEach(cb=>cb(testNow));};
-window.addEventListener('DOMContentLoaded',()=>{
- const Original=NumberMerge.Game;NumberMerge.Game=class extends Original {
-  constructor(options){super(options);window.g=this;}
- };
-}, {once:true});
 """
 # Wrap model.js before game.js executes instead of depending on DOMContentLoaded order.
 CAPTURE = "\nconst Original=NumberMerge.Game; NumberMerge.Game=class extends Original {constructor(options){super(options);window.g=this;}};"
@@ -21,7 +16,7 @@ with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH', '/usr/bin/chromium'), args=['--no-sandbox'])
     for mobile in [False, True]:
         context = browser.new_context(viewport={'width': 390 if mobile else 1100, 'height': 844}, is_mobile=mobile, has_touch=mobile)
-        context.add_init_script(INIT.split("window.addEventListener")[0])
+        context.add_init_script(INIT)
         page = context.new_page(); errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         def model_route(route):
@@ -105,4 +100,16 @@ with sync_playwright() as p:
         page.locator('#retry').click(); assert page.locator('#overlay').is_hidden()
         context.close()
     print('PASS blocked storage read/write remains playable')
+    context=browser.new_context(viewport={'width':320,'height':568}, reduced_motion='reduce')
+    page=context.new_page(); page.goto(BASE+'games/number-merge/')
+    page.screenshot(path='/tmp/number-merge-start-320.png')
+    assert page.locator('#start').bounding_box()['height']>=44
+    page.locator('#start').click(); page.wait_for_timeout(120)
+    assert page.locator('#time').inner_text()!='00:00.00'
+    assert page.evaluate('getComputedStyle(document.querySelector("#board")).touchAction')=='none'
+    page.keyboard.press('ArrowRight')
+    assert page.evaluate('document.querySelector("#board").getAnimations({subtree:true}).length')==0
+    assert page.locator('#overlay').is_hidden()
+    context.close()
+    print('PASS real animation-frame timer, 320px start screen, reduced motion')
     browser.close()

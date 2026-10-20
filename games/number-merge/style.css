@@ -23,7 +23,7 @@ h1 { font-size: clamp(19px, 5.5vw, 27px); letter-spacing: 1px; margin: 0; }
 .tile[data-value="2048"] { background: #176073; border-color: #8cf8ff; box-shadow: 0 0 20px #65efff66; }
 .tile[data-value="1024"], .tile[data-value="2048"] { font-size: clamp(21px, 6vw, 32px); }
 .ghost { z-index: 1; pointer-events: none; }
-.overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #080e20f2; padding: 12px; text-align: center; }
+.overlay { z-index: 2; position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #080e20f2; padding: 12px; text-align: center; }
 [hidden] { display: none !important; }
 .eyebrow { color: #65efff; font-size: 10px; letter-spacing: 2px; margin: 4px 0; }
 h2 { font-size: clamp(28px, 9vw, 44px); line-height: 1.08; margin: 12px 0; color: #fff; text-shadow: 3px 3px #943cb5; }
