@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080e20">
+  <meta name="description" content="数字を合体して2048へ。最速クリアを目指すネオン数字パズル。">
+  <title>NUMBER MERGE — MY ARCADE</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./model.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+<main class="cabinet">
+  <header><a href="../../index.html">← MY ARCADE</a><span>PUZZLE / 03</span></header>
+  <div class="marquee"><span>✦</span><h1>NUMBER MERGE</h1><span>✦</span></div>
+  <div class="hud">
+    <div>TIME<strong id="time">00:00.00</strong></div>
+    <div>BEST<strong id="best">--:--.--</strong></div>
+  </div>
+  <div class="arena">
+    <div id="board" tabindex="0" role="group" aria-label="4×4の盤面。矢印キーまたはスワイプで操作。"></div>
+    <section class="overlay" id="overlay" aria-labelledby="screen-title">
+      <p class="eyebrow">2048 TIME ATTACK</p>
+      <h2 id="screen-title">NUMBER<br>MERGE</h2>
+      <p id="message">同じ数字を重ねて、2048へ。</p>
+      <p class="record">BEST <strong id="start-best">--:--.--</strong></p>
+      <p id="new-best" hidden>NEW BEST! 自己ベスト更新</p>
+      <button id="start" type="button">START ▶</button>
+      <div class="result-actions" id="result-actions" hidden>
+        <button id="retry" type="button">RETRY ↻</button>
+        <a class="button" id="home" href="../../index.html">HOME</a>
+      </div>
+      <p class="hint" id="hint">スワイプ / ↑ ↓ ← → で移動<br>同じ数字を合体。2048完成でクリア。</p>
+    </section>
+  </div>
+  <p class="instructions">SWIPE / ↑ ↓ ← → <span>GOAL <b>2048</b></span></p>
+  <footer>NO LIMIT. JUST YOUR BEST TIME.</footer>
+  <p class="sr-only" id="status" aria-live="polite"></p>
+  <noscript>プレイするにはJavaScriptを有効にしてください。</noscript>
+</main>
+</body>
+</html>
