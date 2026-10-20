@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="164" viewBox="0 0 240 164" shape-rendering="crispEdges">
+  <rect width="240" height="164" fill="#111324"/>
+  <path d="M0 40h240M0 80h240M0 120h240M40 0v164M80 0v164M120 0v164M160 0v164M200 0v164" stroke="#25243b"/>
+  <g stroke="#ffffff55" stroke-width="2">
+    <path d="M54 133h132v18H54z" fill="#7ce8e5"/>
+    <path d="M62 113h116v18H62z" fill="#83bcff"/>
+    <path d="M62 93h102v18H62z" fill="#b699f0"/>
+    <path d="M74 73h90v18H74z" fill="#ff91c3"/>
+    <path d="M74 53h80v18H74z" fill="#ffb282"/>
+    <path d="M130 24h80v18h-80z" fill="#f4df86"/>
+  </g>
+  <path d="m119 29-7 7 7 7m-7-7h30" stroke="#7ce8e5" fill="none" stroke-width="3"/>
+  <text x="12" y="18" fill="#ffb9d9" font-family="monospace" font-size="12" font-weight="bold">STACK TOWER</text>
+</svg>

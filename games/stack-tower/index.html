@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10101d">
+  <meta name="description" content="タイミングを合わせてブロックを積もう。タップで遊べるSTACK TOWER。">
+  <title>STACK TOWER — MY ARCADE</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./model.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+  <main class="cabinet">
+    <header><a href="../../index.html" class="home">← MY ARCADE</a><span class="tag">TIMING / 01</span></header>
+    <div class="marquee"><span aria-hidden="true">✦</span><h1>STACK TOWER</h1><span aria-hidden="true">✦</span></div>
+    <div class="hud"><div>SCORE <strong id="score">0</strong></div><div>BEST <strong id="best">0</strong></div></div>
+    <div class="stage" id="stage">
+      <canvas id="game" tabindex="0" aria-label="積み上げエリア。タップ、クリック、Spaceキーでブロックを設置。">Canvasに対応したブラウザーでプレイしてください。</canvas>
+      <section class="overlay" id="start-screen" aria-labelledby="start-title">
+        <p class="eyebrow">ONE TAP. ONE MORE FLOOR.</p>
+        <h2 id="start-title">空まで、積もう。</h2>
+        <div class="tower-icon" aria-hidden="true"><i></i><i></i><i></i></div>
+        <p>タップでブロックをストップ。<br>重なったところだけが残る！</p>
+        <p class="hint">ぴったり合わせて PERFECT<br>PC：クリック / Space</p>
+        <button id="start" type="button">START <span aria-hidden="true">▶</span></button>
+      </section>
+      <section class="overlay" id="over-screen" aria-labelledby="over-title" hidden>
+        <p class="eyebrow">THANKS FOR STACKING</p>
+        <h2 id="over-title">GAME OVER</h2>
+        <p class="result-label">FINAL SCORE</p><strong class="result" id="final-score">0</strong>
+        <p class="hint">BEST <span id="final-best">0</span></p>
+        <button id="retry" type="button">RETRY <span aria-hidden="true">↻</span></button>
+        <a class="return" href="../../index.html">← MY ARCADEへ戻る</a>
+      </section>
+      <p id="feedback" class="feedback" aria-live="polite"></p>
+    </div>
+    <footer>TAP / CLICK / SPACE <span>どこまで積める？</span></footer>
+    <noscript>プレイするにはJavaScriptを有効にしてください。</noscript>
+  </main>
+</body>
+</html>
