@@ -7,7 +7,7 @@
   const colors = ['#ff72bd', '#c57bff', '#9487ff', '#5bbdff', '#59edee'];
   const read = key => { try { return localStorage.getItem(key); } catch { return null; } };
   const save = (key, value) => { try { localStorage.setItem(key, value); } catch { /* Optional storage. */ } };
-  const stored = Number(read('my-arcade:block-breaker:best'));
+  const stored = Number(read('my-arcade:block-breaker:v1.1:best'));
   let best = Number.isFinite(stored) && stored > 0 ? stored : null;
   let muted = read('my-arcade:block-breaker:muted') === 'true';
   let audio, particles = [], trail = [], feedbackUntil = 0, lastState, previousTime = performance.now();
@@ -40,9 +40,8 @@
         vx: (Math.random() - .5) * 120, vy: (Math.random() - .5) * 120, life: .35, color: colors[value.row] });
       particles = particles.slice(-150);
     }
-    if (type === 'stage') feedback(`STAGE ${value} / 3`);
     if (type === 'miss') { trail = []; feedback('+10.00 SEC — 発射して再開', 2500); }
-    if (type === 'clear' && (best === null || value < best)) { best = value; save('my-arcade:block-breaker:best', best); }
+    if (type === 'clear' && (best === null || value < best)) { best = value; save('my-arcade:block-breaker:v1.1:best', best); }
   } });
   function reset() { unlock(); keys.clear(); particles = []; trail = []; game.reset(); feedback('READY — 発射してスタート', Infinity); sync(); canvas.focus({ preventScroll: true }); }
   function launch() { unlock(); if (game.state === 'READY') { game.launch(); feedback('', 0); sync(); } }
@@ -53,7 +52,7 @@
   }
   function sync() {
     $('time').textContent = format(game.time()); $('best').textContent = best === null ? '--:--.--' : format(best);
-    $('stage').textContent = `${game.stage}/3`; $('life').textContent = game.life;
+    $('stage').textContent = `${game.stage}/1`; $('life').textContent = game.life;
     $('launch').disabled = game.state !== 'READY';
     $('pause').disabled = !['READY', 'PLAYING', 'PAUSED'].includes(game.state);
     $('pause').textContent = game.state === 'PAUSED' ? 'RESUME ▶' : 'PAUSE Ⅱ';
@@ -65,7 +64,7 @@
         $('eyebrow').textContent = 'TAKE A BREAK'; $('screen-title').textContent = 'PAUSED';
         $('message').textContent = 'タイマーは停止しています。'; $('hint').textContent = 'RESUME / P で再開'; $('action').textContent = 'RESUME ▶';
       } else if (game.state !== 'START') {
-        $('eyebrow').textContent = game.state === 'ALL CLEAR' ? '3 / 3 STAGES COMPLETE' : 'TRY ONE MORE TIME';
+        $('eyebrow').textContent = game.state === 'ALL CLEAR' ? '1 / 1 STAGE COMPLETE' : 'TRY ONE MORE TIME';
         $('screen-title').textContent = game.state;
         $('message').textContent = `TIME ${format(game.time())}\nMISSES ${game.misses}（+${game.misses * 10}秒）`;
         $('hint').textContent = `BEST ${best === null ? '--:--.--' : format(best)}`; $('action').textContent = 'RETRY ↻';
