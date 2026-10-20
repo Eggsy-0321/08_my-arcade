@@ -7,5 +7,14 @@
     "thumbnail": "",
     "url": "./games/sample/index.html",
     "status": "published"
+  },
+  {
+    "id": "stack-tower",
+    "title": "STACK TOWER",
+    "description": "タップで止めて、空まで積もう。タイミング勝負の積み上げゲーム。",
+    "category": "タイミング",
+    "thumbnail": "./games/stack-tower/thumbnail.svg",
+    "url": "./games/stack-tower/index.html",
+    "status": "published"
   }
 ]

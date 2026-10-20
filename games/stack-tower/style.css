@@ -1,0 +1,34 @@
+:root { color-scheme: dark; font-family: Consolas, "Courier New", "Yu Gothic", Meiryo, monospace; color: #eeeeff; background: #10101d; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 240px; height: 100vh; height: 100dvh; padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); display: flex; justify-content: center; background-image: linear-gradient(#10101d66, #10101d), repeating-linear-gradient(90deg, transparent 0 39px, #252334 40px); }
+a { color: #7ce8e5; text-decoration: none; }
+a:focus-visible, button:focus-visible, canvas:focus-visible { outline: 3px solid #fff1a8; outline-offset: -3px; }
+.cabinet { width: 100%; max-width: 480px; height: 100%; display: flex; flex-direction: column; }
+header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 8px; font-size: 11px; }
+.home { min-height: 44px; display: inline-flex; align-items: center; font-weight: bold; letter-spacing: 1px; }
+.tag { color: #a3a2bb; font-size: 10px; }
+.marquee { border: 2px solid #ff91c3; box-shadow: 4px 4px #4c2944; display: flex; justify-content: space-around; align-items: center; gap: 8px; padding: 10px; background: #2b2032; color: #ffb9d9; flex-shrink: 0; }
+h1 { font-size: clamp(20px, 6vw, 28px); margin: 0; letter-spacing: 2px; text-shadow: 2px 2px #713f5f; }
+.hud { padding: 14px 5px 10px; display: flex; justify-content: space-between; font-size: 12px; color: #a3a2bb; flex-shrink: 0; }
+.hud strong { font-size: 24px; color: #7ce8e5; margin-left: 6px; }
+.stage { position: relative; flex: 1; min-height: 280px; border: 2px solid #4b445f; background: #111324; overflow: hidden; isolation: isolate; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; touch-action: none; }
+.stage::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(transparent 0 3px, #00000012 3px 4px); }
+.overlay { position: absolute; z-index: 2; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 16px; background: #111324ed; text-align: center; }
+[hidden] { display: none !important; }
+.overlay p { margin: 0; font-size: 14px; line-height: 1.8; }
+.overlay .eyebrow { color: #7ce8e5; font-size: 10px; letter-spacing: 1px; }
+h2 { margin: 0; font-size: clamp(22px, 6vw, 32px); color: #ff91c3; text-shadow: 2px 2px #713f5f; }
+.overlay .hint { color: #b7b2cb; font-size: 12px; }
+button { min-width: 180px; min-height: 50px; padding: 12px 24px; border: 2px solid #a9fffc; border-bottom: 5px solid #39878b; border-radius: 0; background: #7ce8e5; color: #10101d; font: bold 18px/1.2 Consolas, monospace; cursor: pointer; touch-action: manipulation; }
+button:hover { background: #b0fffc; } button:active { transform: translateY(2px); }
+.return { padding: 12px 6px; min-height: 44px; font-size: 13px; }
+.overlay .result-label { margin-top: 8px; color: #b7b2cb; font-size: 12px; letter-spacing: 2px; }
+.result { font-size: 60px; line-height: 1; color: #fff1a8; }
+.tower-icon { height: 66px; width: 100px; display: flex; flex-direction: column; justify-content: end; align-items: center; gap: 3px; margin: 4px; }
+.tower-icon i { width: 64px; height: 18px; background: #ff91c3; border-top: 3px solid #ffffff60; box-shadow: 3px 3px #0006; }
+.tower-icon i:nth-child(2) { width: 80px; background: #b699f0; }.tower-icon i:nth-child(3) { width: 100px; background: #7ce8e5; }
+.feedback { position: absolute; z-index: 3; pointer-events: none; top: 20%; left: 0; right: 0; margin: 0; text-align: center; color: #fff1a8; font-size: 24px; font-weight: bold; letter-spacing: 3px; text-shadow: 3px 3px #713f5f; }
+footer { display: flex; justify-content: space-between; gap: 8px; padding: 12px 2px; font-size: 10px; color: #a3a2bb; flex-shrink: 0; }
+@media (max-height: 650px) { .marquee { padding: 6px; } .hud { padding: 8px 4px; } .overlay { gap: 8px; } .tower-icon { display: none; } footer { padding: 8px 2px; } }
+@media (prefers-reduced-motion: reduce) { button:active { transform: none; } }
