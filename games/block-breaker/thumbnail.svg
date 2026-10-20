@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="328" viewBox="0 0 480 328">
+<defs><radialGradient id="bg"><stop stop-color="#24244f"/><stop offset="1" stop-color="#080e20"/></radialGradient></defs>
+<path fill="url(#bg)" d="M0 0h480v328H0z"/>
+<g fill="#ff72bd"><path d="M42 44h58v20H42zm68 0h58v20h-58zm68 0h58v20h-58zm136 0h58v20h-58zm68 0h58v20h-58z"/></g>
+<path fill="#bb83ff" d="M42 74h58v20H42zm136 0h58v20h-58zm68 0h58v20h-58zm68 0h58v20h-58zm68 0h58v20h-58z"/>
+<path fill="#5cdcf5" d="M42 104h58v20H42zm68 0h58v20h-58zm68 0h58v20h-58zm136 0h58v20h-58zm68 0h58v20h-58z"/>
+<text x="240" y="182" text-anchor="middle" font-family="monospace" font-weight="bold" font-size="36" fill="#f4fdff">BLOCK BREAKER</text>
+<text x="240" y="207" text-anchor="middle" font-family="monospace" font-size="13" letter-spacing="3" fill="#92a9c7">3 STAGES / TIME ATTACK</text>
+<path d="m250 268 24-25 16-20" stroke="#64edff" stroke-width="5" opacity=".25" fill="none"/><circle cx="292" cy="220" r="7" fill="#edffff"/>
+<rect x="188" y="282" width="104" height="10" rx="3" fill="#68edfa"/>
+</svg>

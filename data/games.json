@@ -16,5 +16,14 @@
     "thumbnail": "./games/stack-tower/thumbnail.svg",
     "url": "./games/stack-tower/index.html",
     "status": "published"
+  },
+  {
+    "id": "block-breaker",
+    "title": "BLOCK BREAKER",
+    "description": "3ステージを最速で突破！ミスは10秒加算のネオンブロック崩し。",
+    "category": "アクション",
+    "thumbnail": "./games/block-breaker/thumbnail.svg",
+    "url": "./games/block-breaker/index.html",
+    "status": "published"
   }
 ]

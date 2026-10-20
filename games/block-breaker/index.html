@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080e20">
+  <meta name="description" content="3ステージを最速で突破！ミスは10秒加算のネオンブロック崩し。">
+  <title>BLOCK BREAKER — MY ARCADE</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./model.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+<main class="cabinet">
+  <header><a href="../../index.html">← HOME / MY ARCADE</a><span>ACTION / 02</span></header>
+  <div class="marquee"><span>✦</span><h1>BLOCK BREAKER</h1><span>✦</span></div>
+  <div class="hud">
+    <div>TIME<strong id="time">00:00.00</strong></div><div>BEST<strong id="best">--:--.--</strong></div>
+    <div>STAGE<strong id="stage">1/3</strong></div><div>LIFE<strong id="life">3</strong></div>
+  </div>
+  <div class="arena">
+    <canvas id="game" width="400" height="580" tabindex="0" aria-label="ブロック崩し。マウス・左右キー・ドラッグで移動。Spaceまたはクリックで発射。">Canvas対応ブラウザーが必要です。</canvas>
+    <section class="overlay" id="overlay" aria-labelledby="screen-title">
+      <p class="eyebrow" id="eyebrow">3 STAGES / TIME ATTACK</p>
+      <h2 id="screen-title">BREAK THE<br>NEON.</h2>
+      <p id="message">3ステージを、最速で。<br>ミスは +10秒。ライフは3つ。</p>
+      <p class="hint" id="hint">ドラッグ / マウス / ← → で移動<br>発射ボタン / Space / クリックで発射<br>P / PAUSEで一時停止</p>
+      <button id="action" type="button">START ▶</button>
+    </section>
+    <p id="feedback" aria-live="polite">READY — 発射してスタート</p>
+  </div>
+  <div class="controls">
+    <button id="launch" type="button" disabled>LAUNCH ↑</button>
+    <button id="pause" type="button" disabled>PAUSE Ⅱ</button>
+    <button id="retry" type="button">RETRY ↻</button>
+    <button id="mute" type="button" aria-pressed="false">MUTE OFF</button>
+  </div>
+  <footer>NO LIMIT. JUST YOUR BEST TIME.<span>落下 1回につき +10秒</span></footer>
+  <noscript>プレイするにはJavaScriptを有効にしてください。</noscript>
+</main>
+</body>
+</html>
