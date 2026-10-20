@@ -16,6 +16,10 @@ with sync_playwright() as p:
         page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
         assert page.locator('#game-list .cabinet').count()==3
         page.get_by_role('link',name='BLOCK BREAKERを開く',exact=False).click()
+        page.evaluate('localStorage.setItem("my-arcade:block-breaker:best","123456")')
+        page.reload()
+        assert page.locator('#best').inner_text()=='--:--.--'
+        assert page.locator('#stage').inner_text()=='1/1'
         page.wait_for_function('typeof BlockBreaker !== "undefined"')
         page.evaluate('''() => {const update=BlockBreaker.Game.prototype.update;BlockBreaker.Game.prototype.update=function(dt){window.g=this;return update.call(this,dt);};tick(16);}''')
         page.locator('#action').click();page.evaluate('tick(1000)')
@@ -37,7 +41,7 @@ with sync_playwright() as p:
         page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:01.00'
         page.locator('#pause').click();page.evaluate('tick(3000)');assert page.locator('#time').inner_text()=='00:01.00'
         page.locator('#action').click();page.evaluate('tick(100)')
-        page.evaluate('g.ball={x:20,y:585,vx:0,vy:290};tick(16)')
+        page.evaluate('g.ball={x:20,y:585,vx:0,vy:319};tick(16)')
         assert page.locator('#life').inner_text()=='2';assert page.evaluate('g.misses')==1
         before=page.evaluate('g.time()');page.evaluate('tick(1000)');assert page.evaluate('g.time()')==before+1000
         page.evaluate('''Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));''')
@@ -48,16 +52,18 @@ with sync_playwright() as p:
         page.locator('#launch').click()
         page.evaluate('for(let i=0;i<2;i++){g.miss();g.launch();}tick(16);')
         assert page.locator('#screen-title').inner_text()=='GAME OVER'
-        assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:best")') is None
+        assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")') is None
         page.locator('#action').click();page.locator('#launch').click();page.evaluate('tick(500)')
-        clear='for(let i=0;i<3;i++){g.blocks=[{x:20,y:64,w:42,h:18,row:0}];g.destroy(0);}tick(16);'
+        clear='g.blocks=[{x:20,y:64,w:42,h:18,row:0}];g.destroy(0);tick(16);'
         page.evaluate(clear)
+        assert page.evaluate('g.stage')==1
+        assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:best")')=='123456'
         assert page.locator('#screen-title').inner_text()=='ALL CLEAR'
-        best=page.evaluate('localStorage.getItem("my-arcade:block-breaker:best")');assert float(best)==500
+        best=page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")');assert float(best)==500
         page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:00.50'
         page.locator('#retry').click();assert page.locator('#time').inner_text()=='00:00.00'
         page.locator('#launch').click();page.evaluate('tick(1000)');page.evaluate(clear)
-        assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:best")')==best
+        assert page.evaluate('localStorage.getItem("my-arcade:block-breaker:v1.1:best")')==best
         page.locator('#mute').click();assert page.locator('#mute').get_attribute('aria-pressed')=='true'
         page.reload();assert page.locator('#best').inner_text()=='00:00.50'
         assert page.locator('#mute').get_attribute('aria-pressed')=='true'

@@ -3,7 +3,7 @@
 // Fixed logical coordinates keep physics unchanged across resize/orientation.
 const BlockBreaker = (() => {
   const W = 400, H = 580, R = 6, PW = 80, PY = 536;
-  const speed = stage => 290 * (1 + (stage - 1) * .05);
+  const speed = () => 319;
   const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
   function overlaps(ball, b) {
     return Math.hypot(ball.x - clamp(ball.x, b.x, b.x + b.w),
@@ -33,8 +33,8 @@ const BlockBreaker = (() => {
       if (this.state !== 'READY') return;
       if (!this.started) { this.started = true; this.since = this.now(); }
       this.state = 'PLAYING';
-      this.ball.vx = speed(this.stage) * .22;
-      this.ball.vy = -Math.sqrt(speed(this.stage) ** 2 - this.ball.vx ** 2);
+      this.ball.vx = speed() * .22;
+      this.ball.vy = -Math.sqrt(speed() ** 2 - this.ball.vx ** 2);
     }
     pause() {
       if (!['READY', 'PLAYING'].includes(this.state)) return;
@@ -47,7 +47,7 @@ const BlockBreaker = (() => {
     generate() {
       const cells = Array.from({ length: 40 }, (_, i) => i);
       for (let i = 39; i > 0; i--) { const j = Math.floor(this.random() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
-      const count = 28 + Math.floor(this.random() * 13);
+      const count = 24 + Math.floor(this.random() * 9);
       this.blocks = cells.slice(0, count).map(i => {
         const b = { x: 17 + i % 8 * 46, y: 64 + Math.floor(i / 8) * 26, w: 42, h: 18, row: Math.floor(i / 8) };
         b.ignored = overlaps(this.ball, b); return b;
@@ -56,13 +56,7 @@ const BlockBreaker = (() => {
     destroy(index) {
       const b = this.blocks.splice(index, 1)[0]; this.event('brick', b);
       if (this.blocks.length) return;
-      if (this.stage === 3) {
-        this.stopClock(); this.state = 'ALL CLEAR'; this.event('clear', this.time()); return;
-      }
-      this.stage++;
-      const magnitude = Math.hypot(this.ball.vx, this.ball.vy);
-      if (magnitude) { this.ball.vx *= speed(this.stage) / magnitude; this.ball.vy *= speed(this.stage) / magnitude; }
-      this.generate(); this.event('stage', this.stage);
+      this.stopClock(); this.state = 'ALL CLEAR'; this.event('clear', this.time());
     }
     miss() {
       if (this.state !== 'PLAYING') return;
@@ -73,7 +67,7 @@ const BlockBreaker = (() => {
     update(seconds) {
       if (this.state !== 'PLAYING') return;
       // At most 2 logical pixels per step, below radius and minimum obstacle thickness.
-      const dt = clamp(seconds, 0, .05), steps = Math.max(1, Math.ceil(speed(this.stage) * dt / 2));
+      const dt = clamp(seconds, 0, .05), steps = Math.max(1, Math.ceil(speed() * dt / 2));
       for (let i = 0; i < steps && this.state === 'PLAYING'; i++) this.step(dt / steps);
     }
     step(dt) {
@@ -85,7 +79,7 @@ const BlockBreaker = (() => {
       if (ball.vy > 0 && oldY + R <= PY && ball.y + R >= PY &&
           Math.abs(ball.x - this.paddle) <= PW / 2 + R) {
         const angle = clamp((ball.x - this.paddle) / (PW / 2), -1, 1) * Math.PI / 3;
-        ball.vx = Math.sin(angle) * speed(this.stage); ball.vy = -Math.cos(angle) * speed(this.stage);
+        ball.vx = Math.sin(angle) * speed(); ball.vy = -Math.cos(angle) * speed();
         ball.y = PY - R; this.event('paddle');
       }
       if (ball.y - R > H) { this.miss(); return; }
