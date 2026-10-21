@@ -23,15 +23,16 @@
     ctx.fillStyle = '#c67b98'; ctx.font = '9px monospace'; ctx.textAlign = 'left'; ctx.fillText('DANGER LINE',8,LIMIT-7);
     if (game.state !== 'START' && game.state !== 'GAME OVER') {
       const points = game.guide(); ctx.strokeStyle = '#b6edff70'; ctx.setLineDash([3,8]); ctx.lineWidth = 2; ctx.beginPath();
-      points.forEach((p,i) => i ? ctx.lineTo(p.x,p.y) : ctx.moveTo(p.x,p.y)); ctx.stroke(); ctx.setLineDash([]);
+      const rad = game.angle*Math.PI/180;
+      // Trim only the drawing to the visible bubble edge; keep the center-based trajectory.
+      ctx.moveTo(points[0].x+Math.sin(rad)*(R-2),points[0].y-Math.cos(rad)*(R-2));
+      points.slice(1).forEach(p => ctx.lineTo(p.x,p.y)); ctx.stroke(); ctx.setLineDash([]);
     }
     game.board.forEach(b => { const p=position(b,game.offset); bubble(p.x,p.y,b.color); });
     if (!reduced.matches) game.effects.forEach(b => {
       const t=1-game.remaining/.32;
       bubble(b.x,b.y+(b.falling ? t*t*140 : 0),b.color,Math.max(0,1-t));
     });
-    ctx.strokeStyle = '#65eaff'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(W/2,LAUNCH+21);
-    const rad=game.angle*Math.PI/180; ctx.lineTo(W/2+Math.sin(rad)*32,LAUNCH-Math.cos(rad)*32); ctx.stroke();
     bubble(W/2,LAUNCH,game.current);
     ctx.fillStyle = '#98a9c7'; ctx.font = '11px monospace'; ctx.textAlign = 'center'; ctx.fillText('NEXT',65,LAUNCH-27); bubble(65,LAUNCH,game.next);
     if (game.shot) bubble(game.shot.x,game.shot.y,game.shot.color);
