@@ -76,7 +76,7 @@ const SnakeInvaders = (() => {
       this.snakes.forEach(s=>moveSnake(s,level.speed*dt));
       if(this.snakes.some(s=>s.y+R>=LIMIT)) { this.state='GAME OVER'; return; }
       this.fireClock+=dt;
-      if(this.fireClock+1e-9>=.25) { this.fireClock-=.25; this.bullets.push({x:this.ship,y:SHIP_Y-18}); this.events.push('shoot'); }
+      if(this.fireClock+1e-9>=.5) { this.fireClock-=.5; this.bullets.push({x:this.ship,y:SHIP_Y-18}); this.events.push('shoot'); }
       this.bullets=this.bullets.filter(b=> {
         const end=b.y-BULLET_SPEED*dt, hit=firstHit(this.snakes,b,end);
         if(hit) { this.hit(hit); return false; }

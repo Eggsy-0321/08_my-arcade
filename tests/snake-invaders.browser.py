@@ -48,7 +48,7 @@ with sync_playwright() as p:
         else:
             page.keyboard.down('ArrowLeft');page.evaluate('tick(500)');page.keyboard.up('ArrowLeft');assert page.evaluate('g.ship')<100
             page.keyboard.down('ArrowRight');page.evaluate('tick(1500)');page.keyboard.up('ArrowRight');assert page.evaluate('g.ship')==344
-        page.evaluate('g.snakes=[];g.fireClock=0;tick(300)');assert page.evaluate('g.bullets.length')>0
+        page.evaluate('g.snakes=[];g.fireClock=0;tick(510)');assert page.evaluate('g.bullets.length')>0
         page.screenshot(path=f'/tmp/snake-playing-{mobile}.png')
         page.locator('#pause').click();snapshot=page.evaluate('JSON.stringify(g)');page.evaluate('tick(5000)');assert page.evaluate('JSON.stringify(g)')==snapshot
         assert page.locator('#screen-title').inner_text()=='PAUSED'
@@ -96,7 +96,7 @@ with sync_playwright() as p:
     page.goto(BASE+'games/snake-invaders/')
     page.evaluate('''() => {window.frequencies=[];const original=AudioContext.prototype.createOscillator;
     AudioContext.prototype.createOscillator=function(){const o=original.call(this),set=o.frequency.setValueAtTime.bind(o.frequency);o.frequency.setValueAtTime=(value,time)=>{frequencies.push(value);return set(value,time)};return o}}''')
-    page.locator('#sound').click();page.locator('#start').click();page.wait_for_timeout(350)
+    page.locator('#sound').click();page.locator('#start').click();page.wait_for_timeout(650)
     assert 650 in page.evaluate('frequencies')
     page.evaluate('g.hit({snake:g.snakes[0],index:1})');page.wait_for_timeout(50)
     assert 180 in page.evaluate('frequencies')

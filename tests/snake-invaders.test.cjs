@@ -61,8 +61,8 @@ test('頭下端のみでライン判定、胴体や宇宙船接触では終了�
 test('PAUSEで時間・移動・射撃・出現・演出を完全停止、RESUMEで再開',()=> {
   const g=game(); g.hit({snake:g.snakes[0],index:0}); g.pause(); const snapshot=JSON.stringify(g); g.update(40,1); g.moveTo(0); assert.equal(JSON.stringify(g),snapshot); g.resume(); g.update(.1,1); near(g.time,.1); near(g.effects[0].remaining,.14); assert.ok(g.ship>W/2);
 });
-test('左右移動・制限、自動射撃0.25秒、弾速・画面外削除、RETRYリセット',()=> {
-  const g=game(); g.snakes=[]; g.update(.24); assert.equal(g.bullets.length,0); g.update(.01); assert.equal(g.bullets.length,1); const y=g.bullets[0].y; g.update(.1); near(g.bullets[0].y,y-BULLET_SPEED*.1);
+test('左右移動・制限、自動射撃0.5秒、弾速・画面外削除、RETRYリセット',()=> {
+  const g=game(); g.snakes=[]; g.update(.49); assert.equal(g.bullets.length,0); g.update(.01); assert.equal(g.bullets.length,1); const y=g.bullets[0].y; g.update(.1); near(g.bullets[0].y,y-BULLET_SPEED*.1);
   g.moveTo(-100); assert.equal(g.ship,16); g.update(1.5,1); near(g.ship,W-16); near(SHIP_SPEED*1.5,W-32);
   g.bullets=[{x:30,y:0}]; g.update(.02); assert.equal(g.bullets.length,0);
   g.score=100; g.pending=true; g.effects=[{}]; g.start(); assert.equal(g.score,0); assert.equal(g.pending,false); assert.equal(g.bullets.length,0); assert.equal(g.effects.length,0); assert.equal(g.ship,W/2); assert.equal(g.time,0);
@@ -74,4 +74,15 @@ test('登録、全ローカル参照、HOMEはPagesサブパスを維持',()=> {
   const games=JSON.parse(fs.readFileSync('data/games.json','utf8')); assert.equal(games.filter(g=>g.id==='snake-invaders').length,1); assert.equal(games.find(g=>g.id==='snake-invaders').status,'published');
   for(const g of games) { assert.ok(fs.existsSync(g.url)); if(g.thumbnail)assert.ok(fs.existsSync(g.thumbnail)); }
   const html=fs.readFileSync('games/snake-invaders/index.html','utf8'), home=html.match(/id="home" href="([^"]+)"/)[1]; assert.equal(new URL(home,'https://example.com/08_my-arcade/games/snake-invaders/index.html').pathname,'/08_my-arcade/index.html');
+});
+
+test('射撃は0.5秒周期、PAUSEで途中の射撃タイマーを保持しRESUMEで継続',()=> {
+  const g=game(); g.snakes=[];
+  const shots=()=>g.events.filter(e=>e==='shoot').length;
+  g.update(.2); near(g.fireClock,.2); assert.equal(shots(),0);
+  g.pause(); g.update(10); near(g.fireClock,.2); near(g.time,.2); assert.equal(shots(),0);
+  g.resume(); g.update(.29); assert.equal(shots(),0); near(g.fireClock,.49);
+  g.update(.01); assert.equal(shots(),1); near(g.fireClock,0);
+  for(let i=1;i<=5;i++) { g.update(.49); assert.equal(shots(),i); g.update(.01); assert.equal(shots(),i+1); near(g.fireClock,0); }
+  assert.equal(BULLET_SPEED,800); // 640px / 0.8秒を維持。
 });
