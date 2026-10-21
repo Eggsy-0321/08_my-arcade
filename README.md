@@ -179,3 +179,39 @@ python tests/number-merge.browser.py
 2026-10-21にNode.js 24とヘッドレスChromiumで、全作品のルールテスト・ブラウザーテスト、構文・差分チェックが成功。新作はPCキー/Android相当のネイティブタッチ、長押し・重複発射防止、320×568〜430×932の縦画面とPC幅、スクロール抑制、スコア・BEST保存/復元・保存例外、終了時のループ停止、RETRY、HOME、実アニメーションフレームでの発射を確認しました。既存3作品のゲーム本体と共通トップページは変更せず、既存ブラウザーテストの筐体数だけを5件へ更新しています。
 
 実機Android/iOS、Safari・Firefox、GitHub Pages本番配信は未確認です。
+
+## SNAKE INVADERS
+
+第5作。`games/snake-invaders/index.html` とトップページの筐体から起動できます。ビルド・外部ライブラリ不要のCanvasシューティングです。
+
+- 9:16の黒いフィールド。横ドラッグ、PCの左右矢印キーで青い宇宙船を操作し、0.25秒ごとに自動射撃します。
+- 蛇は頭1個＋胴体3〜8個。左右端で反転し、直径2個分を経路に沿って下降。胴体は頭の通過経路を距離で追従します。出現直後の胴体は入口の外から続いて入場します。
+- 胴体命中は尻尾を1個削除して10点。頭撃破は100＋残存胴体×20点。弾は進行方向で最初の対象だけに命中し、同時接触なら頭を優先します。
+- 頭の下端が高さ65%の赤い点線に触れると終了。胴体・自機との接触判定はありません。
+- 出現間隔は6/5/4/3/2秒、速度は初期値の1/1.125/1.25/1.375/1.5倍へ30秒ごとに上昇し、120秒以降固定。最大5匹、上限時の予定は1件だけ保留して空き次第補充します。
+- PAUSE・タブ非表示・フォーカス喪失で停止し、RESUMEで再開。経過時間・移動・弾・出現・点滅演出・効果音を停止します。
+- BESTは得点時に `my-arcade:snake-invaders:best` へ保存。ストレージ利用不可時はセッション内で保持します。
+- SOUNDは初期OFF、START画面のみ切替可能。射撃・胴体命中・頭撃破の3効果音をWeb Audioで生成し、BGMはありません。設定は保存せずRETRYでOFFに戻します。
+- `model.js` はルール・経路・衝突判定、`game.js` は描画・入力・画面・保存・音を担当します。
+
+### 検証
+
+リポジトリ直下で実行します。ブラウザーテストは親ディレクトリを `python -m http.server 8000` で配信してから実行します。
+
+```sh
+node --check games/snake-invaders/model.js
+node --check games/snake-invaders/game.js
+node --test tests/*.test.cjs
+python tests/snake-invaders.browser.py
+python tests/stack-tower.browser.py
+python tests/block-breaker.browser.py
+python tests/number-merge.browser.py
+python tests/bubble-shooter.browser.py
+git diff --check
+```
+
+新規12件のルールテストで左右反転・下降・経路追従、得点・尻尾削除、非貫通・命中順序、難易度境界、出現上限・保留、頭のみのライン判定、停止・再開、移動・射撃・RETRY、得点通知・登録・サブパスを検証します。
+
+2026-10-21、Node.js 24とヘッドレスChromiumで既存4作品を含むルールテスト・ブラウザーテストを実施。新作はPC左右キー、Android相当のネイティブタッチ、320×568〜430×932の縦画面・PC・横画面での9:16表示、スクロール抑制、即時開始、PAUSE/RESUME、BEST保存・復元・例外時の継続、SOUND初期OFF/RETRY時リセット、HOMEのサブパス帰還、実アニメーションフレームと3種類のWeb Audio生成を確認しました。既存4作品の本体は変更せず、既存ブラウザーテストは登録筐体数の期待値だけを6へ更新しています。
+
+実機Android/iOS、Safari・Firefox、GitHub Pages本番配信、実際のスピーカー出力・聴感は未確認です。

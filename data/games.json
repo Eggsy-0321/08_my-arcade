@@ -43,5 +43,14 @@
     "thumbnail": "./games/bubble-shooter/thumbnail.svg",
     "url": "./games/bubble-shooter/index.html",
     "status": "published"
+  },
+  {
+    "id": "snake-invaders",
+    "title": "SNAKE INVADERS",
+    "description": "迫る蛇の頭を狙え！左右移動と自動射撃で挑むエンドレスシューティング。",
+    "category": "シューティング",
+    "thumbnail": "./games/snake-invaders/thumbnail.svg",
+    "url": "./games/snake-invaders/index.html",
+    "status": "published"
   }
 ]
