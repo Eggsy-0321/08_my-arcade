@@ -52,5 +52,14 @@
     "thumbnail": "./games/snake-invaders/thumbnail.svg",
     "url": "./games/snake-invaders/index.html",
     "status": "published"
+  },
+  {
+    "id": "lights-out",
+    "title": "LIGHTS OUT",
+    "description": "タップで十字に反転。25マスすべてを点灯させるネオンパズル。",
+    "category": "パズル",
+    "thumbnail": "./games/lights-out/thumbnail.svg",
+    "url": "./games/lights-out/index.html",
+    "status": "published"
   }
 ]
