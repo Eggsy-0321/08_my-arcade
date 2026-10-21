@@ -21,7 +21,7 @@ with sync_playwright() as p:
         page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
         page.route('**/bubble-shooter/model.js',capture)
         page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==5
+        assert page.locator('#game-list .cabinet').count()==6
         page.get_by_role('link',name='BUBBLE SHOOTERを開く',exact=False).click()
         assert page.locator('#start').is_visible() and page.locator('#home').is_hidden()
         for w,h in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:

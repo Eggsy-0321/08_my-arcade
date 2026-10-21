@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 240" shape-rendering="crispEdges">
+<rect width="360" height="240" fill="#000"/>
+<text x="180" y="31" text-anchor="middle" fill="#f9da59" font-family="monospace" font-weight="bold" font-size="20">SNAKE INVADERS</text>
+<path d="M52 64h24v24H52zm28 0h24v24H80zm28 0h24v24h-24zm28 0h24v24h-24zM264 108h24v24h-24zm-28 0h24v24h-24zm-28 0h24v24h-24z" fill="#6be47d"/>
+<path d="M166 62h20v4h4v20h-4v4h-20v-4h-4V66h4zM182 106h20v4h4v20h-4v4h-20v-4h-4v-20h4z" fill="#f9da59"/>
+<path d="M168 70h4v4h-4zm12 0h4v4h-4zm4 44h4v4h-4zm12 0h4v4h-4z"/>
+<path d="M0 156h360" stroke="#ef4d5e" stroke-width="2" stroke-dasharray="7 6"/>
+<path d="M178 180h4v-12h-4zm0-28h4v-10h-4z" fill="#b3eaff"/>
+<path d="M176 195h8v8h8v8h8v16h-12v-8h-16v8h-12v-16h8v-8h8z" fill="#51acff"/>
+</svg>
