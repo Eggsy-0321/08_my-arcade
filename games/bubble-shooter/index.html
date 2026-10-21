@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080e20">
+  <meta name="description" content="同じ色を3つつなげて消す、時間制限なしのサバイバル型バブルシューティング。">
+  <title>BUBBLE SHOOTER — MY ARCADE</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./model.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+<main class="cabinet">
+  <header><a href="../../index.html">← MY ARCADE</a><span>PUZZLE / 04</span></header>
+  <div class="marquee"><span>✦</span><h1>BUBBLE SHOOTER</h1><span>✦</span></div>
+  <div class="hud"><div>SCORE<strong id="score">0</strong></div><div>BEST<strong id="best">0</strong></div></div>
+  <div class="arena">
+    <canvas id="game" width="360" height="560" role="img" aria-label="バブル盤面。LEFT・RIGHTで照準を動かし、SHOOTで発射。"></canvas>
+    <section class="overlay" id="overlay" aria-labelledby="screen-title">
+      <p class="eyebrow">SURVIVAL PUZZLE</p><h2 id="screen-title">BUBBLE<br>SHOOTER</h2>
+      <p id="message">同じ色を3つつなげて消そう。</p>
+      <p class="record">BEST <strong id="result-best">0</strong></p>
+      <button id="start" type="button">START ▶</button>
+      <div id="result-actions" hidden><button id="retry" type="button">RETRY ↻</button><a class="button" id="home" href="../../index.html">HOME — MY ARCADEへ戻る</a></div>
+      <p class="hint" id="hint">LEFT / RIGHT 長押しで照準移動<br>SHOOTで発射。浮いたバブルは落下！<br>連続ミスで天井に1段追加。時間制限なし。</p>
+    </section>
+  </div>
+  <p class="instructions"><span id="misses">MISS 0 / 3</span><span>← → / SPACE</span></p>
+  <div class="controls"><button id="left" type="button" aria-label="LEFT 照準を左へ">◀ LEFT</button><button id="shoot" type="button">SHOOT</button><button id="right" type="button" aria-label="RIGHT 照準を右へ">RIGHT ▶</button></div>
+  <footer>MATCH 10 PT · DROP 20 PT</footer>
+  <p class="sr-only" id="status" aria-live="polite"></p>
+  <noscript>プレイするにはJavaScriptを有効にしてください。</noscript>
+</main>
+</body>
+</html>

@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」がプレイできます。「SAMPLE GAME」は起動確認ページです。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」がプレイできます。「SAMPLE GAME」は起動確認ページです。
 
 ```text
 index.html                 トップページ
@@ -13,7 +13,10 @@ data/games.json            ゲーム一覧（配列）
 assets/pixel-scene.svg     サムネイル未指定・読み込み失敗時の代替画像
 games/sample/index.html   起動確認ページ
 games/stack-tower/        STACK TOWER（HTML・CSS・ルール・描画/操作・SVG）
-tests/                   STACK TOWERのルールテスト・任意のブラウザーテスト
+games/block-breaker/      BLOCK BREAKER
+games/number-merge/       NUMBER MERGE
+games/bubble-shooter/     BUBBLE SHOOTER
+tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
 ## ローカル起動
@@ -70,7 +73,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップにSAMPLE GAMEとSTACK TOWERの筐体が2件表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
+- トップにSAMPLE GAMEと4作品の筐体が5件表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
 - 起動確認ページの戻るリンクで一覧へ戻れること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
@@ -136,3 +139,43 @@ python tests/stack-tower.browser.py
 3. `https://Eggsy-0321.github.io/08_my-arcade/` を開き、STACK TOWERの筐体から起動します。
 4. START → 設置 → GAME OVER → RETRYと、再読み込み後のBEST、MY ARCADEへの戻りを確認します。
 5. 直接URL `https://Eggsy-0321.github.io/08_my-arcade/games/stack-tower/` でも起動できます。
+
+
+## BUBBLE SHOOTER
+
+第4作。`games/bubble-shooter/index.html` を単独で開いてプレイできます。トップの筐体からも起動できます。外部依存・ビルドは不要です。
+
+- 5色・上から5段の千鳥六角格子。同じ色を3個以上つなげると1個10点、天井から切り離されたバブルは1個20点。時間制限・追加倍率はありません。
+- LEFT / RIGHTの短押しで3度、長押しで連続照準移動（左右70度まで）。PCは左右矢印キーとSpaceで操作。照準ガイドは壁反射と最初のバブル衝突を表示します。
+- 現在弾・NEXTは盤面に存在する色だけを使用。全消去するとスコアを維持して新しい5段を生成します。
+- 連続ミスで天井に1段追加。許容回数は0〜499点で3回、500〜1,499点で2回、1,500点以上で1回。同色消去成功時にミスを0へ戻し、スコア到達時点で難易度を変更します。
+- 吸着・段追加・消去・落下の処理後、バブル下端が下限ラインへ達するとGAME OVER。最終スコア・BEST・RETRY・HOMEを表示します。HOMEは `../../index.html` です。
+- BESTは `my-arcade:bubble-shooter:best` に保存。ストレージが利用できない場合もセッション内のBESTを保持します。RETRYでスコア・盤面・角度・弾・演出・入力状態を初期化します。
+- `model.js` はルール・探索・連続衝突計算、`game.js` は描画・操作・保存を担当。段追加時は格子原点の左右ずれを反転し、既存バブルの横位置と隣接関係を保持します。タブ非表示中は停止し、終了後はアニメーションフレームを停止します。
+- 縦画面を優先し、320×568から画面内に収まる配置と48px以上の操作ボタンを使用。色を区別する補助としてバブルに1〜5の番号も表示します。
+
+### 自動チェック
+
+リポジトリ直下で実行します。Node.js・Python・Playwrightは開発時のみ使用し、ゲーム本体の依存には追加していません。
+
+```sh
+node --check games/bubble-shooter/model.js
+node --check games/bubble-shooter/game.js
+node --test tests/*.test.cjs
+git diff --check
+```
+
+13件の新規ルールテストで、同色2個以下/3個以上、両向きの千鳥隣接、浮遊探索と得点、左右壁反射、吸着・貫通防止、照準との一致、スコア境界のミス条件、段追加時の座標維持、色の更新、全消去継続、下限判定、RETRY、HOME・登録を検証します。再現可能なランダム連続発射でも盤面の重複・重なり・浮遊残留を検証します。
+
+任意のブラウザーチェックは、親フォルダを `python -m http.server 8000` で配信してから実行します。`ARCADE_TEST_URL`・`CHROMIUM_PATH` で既定値を変更できます。
+
+```sh
+python tests/bubble-shooter.browser.py
+python tests/stack-tower.browser.py
+python tests/block-breaker.browser.py
+python tests/number-merge.browser.py
+```
+
+2026-10-21にNode.js 24とヘッドレスChromiumで、全作品のルールテスト・ブラウザーテスト、構文・差分チェックが成功。新作はPCキー/Android相当のネイティブタッチ、長押し・重複発射防止、320×568〜430×932の縦画面とPC幅、スクロール抑制、スコア・BEST保存/復元・保存例外、終了時のループ停止、RETRY、HOME、実アニメーションフレームでの発射を確認しました。既存3作品のゲーム本体と共通トップページは変更せず、既存ブラウザーテストの筐体数だけを5件へ更新しています。
+
+実機Android/iOS、Safari・Firefox、GitHub Pages本番配信は未確認です。
