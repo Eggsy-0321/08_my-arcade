@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」がプレイできます。「SAMPLE GAME」は起動確認ページです。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。「SAMPLE GAME」は起動確認ページです。
 
 ```text
 index.html                 トップページ
@@ -16,6 +16,8 @@ games/stack-tower/        STACK TOWER（HTML・CSS・ルール・描画/操作�
 games/block-breaker/      BLOCK BREAKER
 games/number-merge/       NUMBER MERGE
 games/bubble-shooter/     BUBBLE SHOOTER
+games/snake-invaders/     SNAKE INVADERS
+games/lights-out/         LIGHTS OUT
 tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
@@ -73,7 +75,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップにSAMPLE GAMEと4作品の筐体が5件表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
+- トップにSAMPLE GAMEと6作品の筐体が7件表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
 - 起動確認ページの戻るリンクで一覧へ戻れること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
@@ -217,3 +219,41 @@ git diff --check
 実機Android/iOS、Safari・Firefox、GitHub Pages本番配信、実際のスピーカー出力・聴感は未確認です。
 
 中央放置のバランス検証は `node tests/snake-invaders-idle.cjs` で再現できます。各シードの結果は [中央放置検証](./tests/snake-invaders-idle.md) を参照してください。
+
+
+## LIGHTS OUT
+
+`games/lights-out/index.html` が6作品目の入口です。5×5盤面のマスをタップ・クリックすると、そのマスと上下左右が反転します。一般的な消灯ルールとは異なり、**25マスすべてONでクリア**です。NORMAL固定、1問クリア型で、制限時間・手数制限・ヒントはありません。
+
+- STARTで問題生成と計時開始。完成状態から重複しない6〜10マスを反転するため必ず解答可能で、初期クリア盤面は除外します。RETRYでは直前と異なる問題を生成します。乱数が固定されても無限再生成しないよう、再試行に上限と解答可能な代替配置を設けています。
+- RESETは現在の初期盤面に戻し、MOVES・TIMEを0から即時計測します。
+- PAUSEまたはページ非表示で時計を停止し、盤面を隠します。再表示だけでは再開せず、RESUMEが必要です。
+- 全ONになった瞬間に時計と記録を確定し、約1秒のネオンウェーブ後にCLEARを表示します。演出中は盤面・RESET・PAUSE・サウンド設定を変更できません。CLEARには今回の手数・時間、それぞれのBESTとの比較、RETRY・HOMEを表示します。
+- 電子音はWeb Audio APIで生成し、BGMや外部音声ファイルは使いません。SOUNDは初期ON、設定保存あり。ストレージや音声APIの例外はゲーム進行を妨げません。
+- 保存キーは `my-arcade:lights-out:best-moves`、`my-arcade:lights-out:best-time`（ミリ秒）、`my-arcade:lights-out:sound`（`on` / `off`）。手数・時間は独立した最小値として保存します。不正・欠損レコードは未記録として扱い、保存不可時もページ内の記録を保持します。進行状況は保存せず、リロード時はSTARTに戻ります。
+- 既存作と同じHTML・CSS・model.js・game.js・軽量SVG構成です。外部依存・ビルド不要で、共通トップページと既存5作品の本体には変更を加えていません。
+
+### 検証
+
+リポジトリ直下でルールテストを実行します。
+
+```sh
+node --test tests/*.test.cjs
+```
+
+ブラウザーテストは親ディレクトリを `python -m http.server 8000` で配信し、PlaywrightとChromiumを用意して実行します。これらは開発用で、ゲームの実行依存ではありません。`ARCADE_TEST_URL`・`CHROMIUM_PATH`で配信先とブラウザーを変更できます。
+
+```sh
+python tests/lights-out.browser.py
+python tests/stack-tower.browser.py
+python tests/block-breaker.browser.py
+python tests/number-merge.browser.py
+python tests/bubble-shooter.browser.py
+python tests/snake-invaders.browser.py
+```
+
+新作のルールテストでは全25マスの反転範囲、1000問の解答可能性・選択数・重複なし、手数・時計、RESET、PAUSE/RESUME、演出中の操作禁止、異なるRETRY問題、保存値の検証を確認します。ブラウザーテストではPCクリック・Android相当タッチ、320×568〜430×932とPC幅、記録の独立更新・同値・再読込、音声ON/OFF、保存・音声APIの例外、手動/自動PAUSE、実時間の演出完了、一覧遷移・HOMEを確認します。既存ブラウザーテストの変更は登録筐体数の期待値（6→7）のみです。
+
+実機Androidでの操作・音の聞こえ方、Safari/Firefox、GitHub Pages本番での配信は未確認です。
+
+2026-10-21にNode.jsの全62ケース（新作9ケースを含む）、全6作品のPlaywrightテスト、JavaScript構文・差分チェックが最終実行で成功しました。SNAKE INVADERSの中央放置20シードも全てGAME OVERを確認しました。既存SNAKE INVADERSブラウザーテストの帰還後BEST確認が初回に1度失敗しましたが、変更前mainと本ブランチの再実行は成功し、原因は特定できていません。ゲーム本体や検証条件は変更していません。
