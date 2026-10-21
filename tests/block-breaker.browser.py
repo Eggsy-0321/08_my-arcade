@@ -14,7 +14,7 @@ with sync_playwright() as p:
         context.add_init_script(CLOCK)
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==4
+        assert page.locator('#game-list .cabinet').count()==5
         page.get_by_role('link',name='BLOCK BREAKERを開く',exact=False).click()
         page.evaluate('localStorage.setItem("my-arcade:block-breaker:best","123456")')
         page.reload()

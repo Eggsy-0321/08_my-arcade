@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="164" viewBox="0 0 240 164">
+<rect width="240" height="164" fill="#090f23"/><path d="M12 123H228" stroke="#ff719e" stroke-dasharray="5 4"/>
+<g stroke="#ffffff80" stroke-width="2"><g fill="#65eaff"><circle cx="28" cy="25" r="12"/><circle cx="80" cy="25" r="12"/><circle cx="145" cy="48" r="12"/><circle cx="132" cy="71" r="12"/></g><g fill="#ff719e"><circle cx="54" cy="25" r="12"/><circle cx="41" cy="48" r="12"/><circle cx="67" cy="48" r="12"/></g><g fill="#bb95ff"><circle cx="106" cy="25" r="12"/><circle cx="132" cy="25" r="12"/><circle cx="158" cy="25" r="12"/></g><g fill="#ffcf65"><circle cx="184" cy="25" r="12"/><circle cx="171" cy="48" r="12"/></g><g fill="#90ed97"><circle cx="210" cy="25" r="12"/><circle cx="197" cy="48" r="12"/></g></g>
+<path d="M120 144L75 76" stroke="#b6edff" stroke-width="2" stroke-dasharray="3 5"/><circle cx="120" cy="144" r="12" fill="#ff719e"/>
+<text x="120" y="107" fill="#edf8ff" font-family="monospace" font-size="16" font-weight="bold" text-anchor="middle">BUBBLE SHOOTER</text></svg>

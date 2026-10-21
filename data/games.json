@@ -34,5 +34,14 @@
     "thumbnail": "./games/number-merge/thumbnail.svg",
     "url": "./games/number-merge/index.html",
     "status": "published"
+  },
+  {
+    "id": "bubble-shooter",
+    "title": "BUBBLE SHOOTER",
+    "description": "3つつなげて、まとめて落とそう。時間制限なしのバブルサバイバル。",
+    "category": "パズル",
+    "thumbnail": "./games/bubble-shooter/thumbnail.svg",
+    "url": "./games/bubble-shooter/index.html",
+    "status": "published"
   }
 ]
