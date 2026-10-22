@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。「SAMPLE GAME」は起動確認ページです。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。
 
 ```text
 index.html                 トップページ
@@ -11,7 +11,6 @@ css/arcade.css             店内・筐体・共通スタイル
 js/arcade.js               JSON読み込みと筐体生成
 data/games.json            ゲーム一覧（配列）
 assets/pixel-scene.svg     サムネイル未指定・読み込み失敗時の代替画像
-games/sample/index.html   起動確認ページ
 games/stack-tower/        STACK TOWER（HTML・CSS・ルール・描画/操作・SVG）
 games/block-breaker/      BLOCK BREAKER
 games/number-merge/       NUMBER MERGE
@@ -75,8 +74,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップにSAMPLE GAMEと6作品の筐体が7件表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
-- 起動確認ページの戻るリンクで一覧へ戻れること。
+- トップに公開済み6作品の筐体が表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
@@ -126,9 +124,9 @@ python tests/stack-tower.browser.py
 2026-10-20、Node.js 24とヘッドレスChromiumで実施：
 
 - JavaScript構文チェック、上記7件のルールテスト、差分空白チェック：成功。
-- 一覧2件とゲームカード遷移、START、タップ設置、二重入力防止、Space、通常/ベストスコア、PERFECT境界と部分重なり：成功。
+- 一覧とゲームカード遷移、START、タップ設置、二重入力防止、Space、通常/ベストスコア、PERFECT境界と部分重なり：成功。
 - 60段までの積み上げとカメラ描画、320×568・390×844・430×932・844×390のリサイズ、DPR 3のCanvas寸法と横方向のはみ出し：成功。
-- GAME OVER、最終スコア、RETRY、再読み込み後の保存値、トップへの帰還と既存SAMPLE GAMEの起動：成功。
+- GAME OVER、最終スコア、RETRY、再読み込み後の保存値、トップへの帰還の動作：成功。
 - localStorageの取得/保存をそれぞれ例外にした場合の継続、PCのマウス設置とSpaceでのSTART：成功。
 - 通常のrequestAnimationFrameによる開始/移動表示もChromiumで確認。高い塔とGAME OVERのスクリーンショットを確認。
 
