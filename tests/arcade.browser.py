@@ -13,7 +13,7 @@ def ready(page):
     page.locator('#game-list[aria-busy="false"]').wait_for(state='attached')
 
 
-def position(page, number, total=6):
+def position(page, number, total=7):
     assert page.locator('#game-count').inner_text() == f'{number:02} / {total:02}'
     assert page.locator('.is-selected').count() == 1
     assert page.locator('.is-selected').get_attribute('tabindex') == '0'
@@ -39,12 +39,12 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(str(e)))
     ready(page)
     assert page.locator('.cabinet .marquee-title').all_text_contents() == [g['title'] for g in GAMES]
-    assert len(GAMES) == 6 and 'SAMPLE GAME' not in page.locator('#game-list').inner_text()
+    assert len(GAMES) == 7 and 'SAMPLE GAME' not in page.locator('#game-list').inner_text()
     position(page,1)
     swipe(page,-140);position(page,2)
     assert page.url == BASE
     swipe(page,140);position(page,1)
-    swipe(page,140);position(page,6)
+    swipe(page,140);position(page,7)
     swipe(page,-140);position(page,1)
     # A synthetic trailing click exercises the explicit post-swipe safety guard.
     page.locator('.is-selected').evaluate('(node)=>node.click()')
@@ -55,7 +55,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(200)
     page.locator('.cabinet[data-offset="1"]').tap(position={'x':20,'y':80});position(page,2)
     page.locator('.cabinet[data-offset="-1"]').tap(position={'x':190,'y':80});position(page,1)
-    # All six URLs remain within the Pages subpath and launch the registered game.
+    # All seven URLs remain within the Pages subpath and launch the registered game.
     for game in GAMES:
         launch_game(page, game['title'])
         page.wait_for_url(BASE + game['url'].removeprefix('./'))
@@ -84,18 +84,18 @@ with sync_playwright() as p:
     page.evaluate('scrollTo(0,0)')
     swipe(page,0,-100);page.wait_for_timeout(500)
     assert page.evaluate('scrollY > 0') and page.url == BASE
-    assert page.locator('#game-count').inner_text() == '01 / 06'
+    assert page.locator('#game-count').inner_text() == '01 / 07'
     page.locator('#play-game').scroll_into_view_if_needed();assert page.locator('#play-game').is_visible()
     assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
     assert not errors, errors
     context.close()
-    print('PASS: touch swipes, wrap, tap, all six URLs, fallback scrolling, five layouts',flush=True)
+    print('PASS: touch swipes, wrap, tap, all seven URLs, fallback scrolling, five layouts',flush=True)
 
     context=browser.new_context(viewport={'width':1280,'height':800})
     page=context.new_page();desktop_errors=[]
     page.on('pageerror', lambda e: desktop_errors.append(str(e)))
     ready(page);position(page,1)
-    page.keyboard.press('ArrowLeft');position(page,6)
+    page.keyboard.press('ArrowLeft');position(page,7)
     page.keyboard.press('ArrowRight');position(page,1)
     page.locator('.is-selected').focus();page.keyboard.press('ArrowRight');position(page,2)
     assert page.locator('.is-selected').evaluate('(n)=>n===document.activeElement')
@@ -110,7 +110,7 @@ with sync_playwright() as p:
 
     for size in [0,1,2,3,9]:
         context=browser.new_context();page=context.new_page()
-        data=GAMES[:size] if size<9 else GAMES + [dict(GAMES[0], id=f'extra-{i}',title=f'EXTRA {i}') for i in range(3)]
+        data=GAMES[:size] if size<9 else GAMES + [dict(GAMES[0], id=f'extra-{i}',title=f'EXTRA {i}') for i in range(9 - len(GAMES))]
         data += [dict(GAMES[0],id='draft',status='draft')]
         page.route('**/data/games.json',lambda route:route.fulfill(json=data))
         ready(page)

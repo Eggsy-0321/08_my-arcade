@@ -68,7 +68,7 @@ test('保存値の欠損・空白・負数・非数・無限・手数の小数�
 });
 test('登録・サブパス・必要な画面操作を持つ', () => {
   const games = JSON.parse(fs.readFileSync('data/games.json', 'utf8'));
-  assert.equal(games.at(-1).id, 'lights-out'); assert.equal(games.at(-1).status, 'published');
+  assert.equal(games[5].id, 'lights-out'); assert.equal(games[5].status, 'published');
   const html = fs.readFileSync('games/lights-out/index.html', 'utf8');
   for (const id of ['start', 'retry', 'home', 'reset', 'pause', 'resume', 'sound']) assert.ok(html.includes(`id="${id}"`));
   assert.match(html, /id="home" href="\.\.\/\.\.\/index.html"/);

@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」がプレイできます。
 
 ```text
 index.html                 トップページ
@@ -17,6 +17,7 @@ games/number-merge/       NUMBER MERGE
 games/bubble-shooter/     BUBBLE SHOOTER
 games/snake-invaders/     SNAKE INVADERS
 games/lights-out/         LIGHTS OUT
+games/alien-invaders/     ALIEN INVADERS
 tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
@@ -74,7 +75,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップに公開済み6作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
+- トップに公開済み7作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
@@ -84,7 +85,7 @@ python -m http.server 8000
 
 ### トップページ UI v2
 
-中央の筐体と作品情報・`01 / 06`形式の位置表示を同期し、左右の筐体は縮小・減光します。約250msの切り替え中は追加操作を受け付けません。横に40px以上、縦移動の1.3倍を超えるドラッグをスワイプとし、移動したジェスチャーの直後450msは筐体・PLAYによる起動を抑止します。縦スクロールとピンチ拡大はブラウザーに任せます。`prefers-reduced-motion`では切り替え演出を省略します。
+中央の筐体と作品情報・`01 / 07`形式の位置表示を同期し、左右の筐体は縮小・減光します。約250msの切り替え中は追加操作を受け付けません。横に40px以上、縦移動の1.3倍を超えるドラッグをスワイプとし、移動したジェスチャーの直後450msは筐体・PLAYによる起動を抑止します。縦スクロールとピンチ拡大はブラウザーに任せます。`prefers-reduced-motion`では切り替え演出を省略します。
 
 公開作品0件・取得失敗は案内を表示し、1件では左右ボタンを無効化します。2件では同じ作品の左右の表示用筐体を用意し、どちらの方向にも循環できます。通常のAndroid縦画面に収まる余白を使い、小さい高さや文字拡大時は縦スクロールで内容に到達できます。
 
@@ -271,3 +272,60 @@ python tests/snake-invaders.browser.py
 実機Androidでの操作・音の聞こえ方、Safari/Firefox、GitHub Pages本番での配信は未確認です。
 
 2026-10-21にNode.jsの全62ケース（新作9ケースを含む）、全6作品のPlaywrightテスト、JavaScript構文・差分チェックが最終実行で成功しました。SNAKE INVADERSの中央放置20シードも全てGAME OVERを確認しました。既存SNAKE INVADERSブラウザーテストの帰還後BEST確認が初回に1度失敗しましたが、変更前mainと本ブランチの再実行は成功し、原因は特定できていません。ゲーム本体や検証条件は変更していません。
+
+## ALIEN INVADERS
+
+第7作。`games/alien-invaders/index.html` またはトップの筐体から起動します。既存の中央フォーカス型カルーセルと6作品の本体は変更していません。HTML/CSS/JavaScriptとローカルSVGのみで、外部ライブラリ・ビルドは不要です。
+
+- 5列×4行の1ウェーブ。上10体は装甲付きHP2（紫）、1発目で破損形状（橙）になり、下10体はHP1（緑）。全滅でCLEAR。ライフ0・防衛ライン到達・自機接触でGAME OVER。
+- 論理座標360×480（3:4固定）のCanvasと独立操作パネル。Androidは左右デジタルスティック＋赤い射撃ボタンを同時操作。PCは←/→とSpace。射撃は押下直後と長押し0.35秒間隔、最大3発、自動射撃なし。スティック中央18%を停止範囲とし、離すと中央へ戻ります。
+- 編隊は初期5列の幅220を敵の減少後も維持し、左右8pxの余白で反転・22px下降。各列の最下段生存敵からランダムに1体が真下へ射撃します。初回を含め1〜2秒のランダム間隔、敵弾数の上限なし。
+- タイマーはPLAYING中の単調増加時計の差分だけを加算し、PAUSE/RESUME時に基準時刻を更新。HUDは実測時間のみ。最終記録は実測時間＋被弾回数×3秒、100分の1秒の整数で比較。同じ更新フレームの全滅を被弾・敗北より優先し、以前の被弾だけを保持します。
+- BESTはCLEAR時のみ `my-arcade:alien-invaders:best` に100分の1秒単位の整数1件を保存。同値は更新せず、新記録時だけNEW BEST!を表示。RETRY/RESTART/GAME OVERは保存値を変更しません。ストレージが使用できない場合はページ内で保持します。
+- PAUSE→RESUME/RESTART/HOME、終了→RETRY/HOME。RESTARTは確認なしで初期化・即開始。タブ非表示・blur・pagehide・タッチ端末横画面で自動PAUSEし、復帰後は手動RESUMEが必要です。PAUSE・終了・入力キャンセルでは入力と押下表示を解除します。
+- Web Audioで短い射撃・撃破・被弾・CLEAR音を生成（BGMなし）。SOUND初期ON、`my-arcade:alien-invaders:sound` にon/offを保存。ユーザー操作でAudioContextを開始・再開し、音声APIの例外でもプレイを続けます。
+
+### 初期バランス
+
+すべて `games/alien-invaders/model.js` の `C` に集約。速度は論理px/秒、時間は秒です。
+
+| 項目 | 値 | 設定理由 |
+| --- | --- | --- |
+| 自機速度 | 210 | 移動可能幅330を約1.57秒で横断。精密操作と回避を両立 |
+| 自機弾速 | 360 | 初期下段まで約0.78秒、上段まで約1.1秒。予測射撃の余地を確保 |
+| 敵弾速 | 145 | 初期最下段から自機まで約1.9秒。見てから回避できる初期値 |
+| 編隊初速 | 14 | 序盤の横移動を緩やかにし、狙う時間を確保 |
+| 撃破1体ごとの加速 | ＋1.5 | 生存数減少による狙いやすさを移動速度で補う |
+| 編隊最高速度 | 42 | 後半でも自機が追える範囲に制限 |
+| 下降幅 | 22 | 敵の高さ1体分 |
+| 敵射撃間隔 | 1〜2 | 確定仕様、発射ごとに再抽選、初回の猶予追加なし |
+| 自機連射間隔／最大弾数 | 0.35／3 | 確定仕様、攻撃位置と発射タイミングに意味を持たせる |
+| 被弾無敵／ペナルティ | 1／＋3 | 確定仕様、連続被弾を防止 |
+| 自機被弾矩形 | 22×15 | 見た目30×21より小さく設定 |
+
+40〜60秒は実機で調整する目標です。標準プレイの到達時間を自動テストで保証していません。
+
+### 検証
+
+親ディレクトリを `python -m http.server 8000` で配信し、開発用のNode.js、Python Playwright、Chromiumで実行します。サイトの依存追加はありません。
+
+```sh
+node --check games/alien-invaders/model.js
+node --check games/alien-invaders/game.js
+node --test --test-isolation=none tests/*.test.cjs
+python tests/alien-invaders.browser.py
+python tests/arcade.browser.py
+python tests/stack-tower.browser.py
+python tests/block-breaker.browser.py
+python tests/number-merge.browser.py
+python tests/bubble-shooter.browser.py
+python tests/snake-invaders.browser.py
+python tests/lights-out.browser.py
+git diff --check
+```
+
+新作14件のルールテストは初期配置・装甲・連射と3発制限・独立直進・固定仮想矩形・加速上限・射撃候補とランダム間隔・敵弾無制限・被弾と無敵・終了優先順位・時計停止・入力解除・記録単位を検証します。ブラウザーテストはPCキー、ネイティブの同時タッチ、中央停止・指離し・キャンセル、PAUSE/RESUME/RESTART、自動PAUSEと復帰、横画面切替、CLEAR/GAME OVERの表示、BEST更新・同値・保存例外・再読込、サウンド設定・音声例外、320×568〜430×932・PCの配置、実フレームと音声生成、一覧起動とサブパスHOMEを確認します。既存テストの変更は7作品への登録対応に限定しています。
+
+実機Androidでのマルチタッチ感触、アプリ切替・スリープ・画面回転、アドレスバー伸縮、音量・連射音の聴感、40〜60秒を目安とした難易度調整は別途確認が必要です。Safari/Firefox、GitHub Pages本番配信も未確認です。
+
+2026-10-22、Node.js 24とヘッドレスChromiumで全76件のルールテスト（新作14件）、新作・カルーセル・既存6作品の全ブラウザーテスト、JavaScript構文・差分チェックが成功。390px縦画面・320pxのCLEAR画面・PC実フレームのスクリーンショットを確認しました。実機Androidは未確認です。
