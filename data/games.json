@@ -52,5 +52,14 @@
     "thumbnail": "./games/lights-out/thumbnail.svg",
     "url": "./games/lights-out/index.html",
     "status": "published"
+  },
+  {
+    "id": "alien-invaders",
+    "title": "ALIEN INVADERS",
+    "description": "20体のエイリアンを撃破！攻撃と回避で最速クリアを目指すタイムアタック。",
+    "category": "シューティング",
+    "thumbnail": "./games/alien-invaders/thumbnail.svg",
+    "url": "./games/alien-invaders/index.html",
+    "status": "published"
   }
 ]

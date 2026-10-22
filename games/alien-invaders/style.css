@@ -1,0 +1,43 @@
+:root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #080b16; color: #e9f5ff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100svh; overscroll-behavior: none; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; border: 2px solid #607798; background: #18263b; min-height: 44px; padding: 8px 12px; font-weight: bold; }
+button:disabled { opacity: .4; cursor: default; }
+a { color: #a8d8ec; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+button:focus-visible, a:focus-visible { outline: 3px solid #ffdf79; outline-offset: 3px; }
+[hidden] { display: none !important; }
+.cabinet { width: min(100%, 440px); margin: auto; padding: 0 12px env(safe-area-inset-bottom); }
+header { display: flex; align-items: center; justify-content: space-between; height: 48px; font-size: 11px; }
+#sound { font-size: 11px; padding: 4px 8px; background: transparent; border: 0; }
+.hud { display: grid; grid-template-columns: 1fr 1.3fr 1fr; align-items: center; height: 64px; gap: 4px; }
+#lives { display: flex; gap: 4px; color: #65f5c1; }
+#lives svg { width: 22px; height: 18px; fill: currentColor; }
+.clock { text-align: center; }
+.clock span { display: block; font-size: 10px; color: #88a0b6; letter-spacing: 3px; }
+#time { font-size: clamp(22px, 6vw, 30px); font-weight: bold; font-variant-numeric: tabular-nums; }
+#pause { font-size: 11px; justify-self: end; padding: 6px 8px; }
+.playfield { position: relative; width: min(100%, calc((100svh - 268px - env(safe-area-inset-bottom)) * .75)); margin: auto; aspect-ratio: 3 / 4; border: 2px solid #3b536d; background: #02050c; }
+canvas { display: block; width: 100%; height: 100%; image-rendering: pixelated; }
+#overlay { position: absolute; inset: 0; display: grid; place-items: center; background: #02050ce8; overflow: auto; }
+.screen { text-align: center; padding: 12px 8px; width: 100%; }
+.eyebrow { color: #829ab5; letter-spacing: 2px; font-size: 9px; margin: 0 0 6px; }
+h1 { color: #8affc2; font-size: clamp(20px, 5.8vw, 30px); line-height: 1.15; margin: 8px 0; text-shadow: 2px 2px #275d57; }
+#instructions, #orientation { font-size: clamp(9px, 2.5vw, 12px); line-height: 1.8; margin: 10px 0; }
+.screen button, #home { display: flex; align-items: center; justify-content: center; width: 90%; max-width: 240px; margin: 8px auto 0; }
+#start, #resume, #retry { background: #1a5847; border-color: #6deab2; }
+#home { font-size: 11px; }
+dl { margin: 8px auto; max-width: 250px; font-size: 12px; }
+dl div { display: flex; justify-content: space-between; padding: 5px 2px; }
+dd { margin: 0; font-variant-numeric: tabular-nums; }
+.total { color: #8affc2; border-top: 1px solid #3b536d; }
+#new-best { color: #ffe37a; font-size: 13px; margin: 5px; }
+.controls { height: 156px; display: flex; align-items: center; justify-content: space-around; background: linear-gradient(#172437, #0c1422); border: 2px solid #3b536d; border-top: 0; border-radius: 0 0 15px 15px; touch-action: none; user-select: none; }
+.control { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.control > span { color: #a0b1c8; font-size: 10px; letter-spacing: 2px; }
+#stick { width: clamp(94px, 28vw, 110px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, #080e18 35%, #344258 37%, #111a28 62%, #4b5c73 65%, #0a101d 70%); display: grid; place-items: center; touch-action: none; }
+#knob { pointer-events: none; width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle at 35% 28%, #8e9db4, #35455f 50%, #111929 80%); box-shadow: 0 5px 3px #0009; }
+#fire { width: clamp(76px, 23vw, 85px); aspect-ratio: 1; border-radius: 50%; border: 5px solid #501c2a; background: radial-gradient(circle at 35% 28%, #ff6572, #e42c45 55%, #a0102a); box-shadow: 0 6px 0 #670b21, 0 9px 8px #0009; touch-action: none; padding: 0; }
+#fire.pressed { transform: translateY(4px); box-shadow: 0 2px 0 #670b21; }
+@media (max-height: 650px) { .eyebrow { display: none; } .screen { padding: 5px; } #instructions { line-height: 1.5; margin: 5px 0; } h1 { margin: 4px 0; font-size: 20px; } dl { font-size: 10px; margin: 4px auto; } dl div { padding: 2px; } .screen button, #home { margin-top: 4px; } }
+@media (orientation: landscape) and (pointer: coarse) { .playfield { width: min(100%, 230px); } }

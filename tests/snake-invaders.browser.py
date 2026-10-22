@@ -20,7 +20,7 @@ with sync_playwright() as p:
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.route('**/snake-invaders/model.js',capture)
         page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
-        assert page.locator('#game-list .cabinet').count()==6
+        assert page.locator('#game-list .cabinet').count()==7
         launch_game(page, 'SNAKE INVADERS')
         assert page.locator('#sound').inner_text()=='SOUND OFF'
         assert page.locator('#pause').is_disabled()

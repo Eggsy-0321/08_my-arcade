@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080b16">
+  <title>ALIEN INVADERS | MY ARCADE</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./model.js" defer></script>
+  <script src="./game.js" defer></script>
+</head>
+<body>
+  <main class="cabinet" aria-label="ALIEN INVADERS">
+    <header><a href="../../index.html">← MY ARCADE</a><button id="sound" type="button" aria-pressed="true">SOUND ON</button></header>
+    <div class="hud">
+      <div id="lives" aria-label="ライフ3"></div>
+      <div class="clock"><span>TIME</span><output id="time">0.00s</output></div>
+      <button id="pause" type="button" disabled>PAUSE</button>
+    </div>
+    <section class="playfield" aria-label="ゲームエリア">
+      <canvas id="canvas" width="360" height="480" aria-label="左右に移動してエイリアン20体を撃破"></canvas>
+      <div id="overlay">
+        <div class="screen">
+          <p class="eyebrow">MY ARCADE · 07</p>
+          <h1 id="screen-title">ALIEN<br>INVADERS</h1>
+          <p id="instructions">20体を全滅させて最速クリア！<br>スティックで左右移動・赤ボタンで射撃<br>PC：← → / Space（長押し連射）<br>ライフ3・被弾1回につき記録に＋3秒</p>
+          <p id="orientation" hidden>縦画面に戻してRESUME</p>
+          <div id="results" hidden>
+            <dl><div><dt>実測タイム</dt><dd id="raw-time"></dd></div><div><dt>ペナルティ</dt><dd id="penalty"></dd></div><div class="total"><dt>最終記録</dt><dd id="final-time"></dd></div><div><dt>BEST</dt><dd id="best"></dd></div></dl>
+            <p id="new-best" hidden>NEW BEST!</p>
+          </div>
+          <button id="start" type="button">START</button>
+          <button id="resume" type="button" hidden>RESUME</button>
+          <button id="restart" type="button" hidden>RESTART</button>
+          <button id="retry" type="button" hidden>RETRY</button>
+          <a id="home" href="../../index.html" hidden>HOME — MY ARCADEへ戻る</a>
+        </div>
+      </div>
+    </section>
+    <section class="controls" aria-label="操作パネル">
+      <div class="control"><div id="stick" role="group" aria-label="左右移動スティック"><div id="knob"></div></div><span>◀ MOVE ▶</span></div>
+      <div class="control"><button id="fire" type="button" aria-label="射撃（長押しで連射）"></button><span>FIRE</span></div>
+    </section>
+  </main>
+</body>
+</html>

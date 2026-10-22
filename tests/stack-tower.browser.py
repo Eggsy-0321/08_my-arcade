@@ -29,7 +29,7 @@ with sync_playwright() as p:
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(BASE)
     page.locator('#game-list .is-selected').wait_for()
-    assert page.locator('#game-list .cabinet').count() == 6
+    assert page.locator('#game-list .cabinet').count() == 7
     launch_game(page, 'STACK TOWER')
     page.wait_for_function('typeof StackTowerRules !== "undefined"')
     # Observe production rule calls without adding a debug API to the game.
@@ -99,7 +99,7 @@ with sync_playwright() as p:
     assert page.locator('#best').inner_text() == '60'
     page.locator('.home').click()
     page.locator('#game-list .is-selected').wait_for()
-    assert page.locator('#game-list .cabinet').count() == 6
+    assert page.locator('#game-list .cabinet').count() == 7
     assert 'SAMPLE GAME' not in page.locator('#game-list').inner_text()
     print('PASS: miss, GAME OVER, retry, persisted best, return link, six published games', flush=True)
     assert not errors, errors

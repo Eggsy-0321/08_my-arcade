@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="164" viewBox="0 0 240 164">
+<rect width="240" height="164" fill="#02050c"/>
+<path d="M18 20h2m199 10h2M34 99h2m168 13h2M100 25h2M155 133h2" stroke="#687b96" stroke-width="2"/>
+<text x="120" y="22" text-anchor="middle" font-family="monospace" font-size="13" font-weight="bold" fill="#8affc2">ALIEN INVADERS</text>
+<defs><path id="a" d="M4 0h12v2h4v12h-4v4h-4v-4H8v4H4v-4H0V2h4zM4 6v4h4V6zm8 0v4h4V6z" fill-rule="evenodd"/></defs>
+<g fill="#c5a5ff"><use href="#a" x="35" y="40"/><use href="#a" x="73" y="40"/><use href="#a" x="111" y="40"/><use href="#a" x="149" y="40"/><use href="#a" x="187" y="40"/></g>
+<g fill="#78eed3"><use href="#a" x="35" y="72"/><use href="#a" x="73" y="72"/><use href="#a" x="111" y="72"/><use href="#a" x="149" y="72"/><use href="#a" x="187" y="72"/></g>
+<path d="M10 126h220" stroke="#f35467" stroke-dasharray="4 4"/>
+<path d="M118 136h4v4h4v4h8v10h-8v-3h-12v3h-8v-10h8v-4h4z" fill="#78ffd0"/>
+<path d="M120 110v-12" stroke="#d1ffff" stroke-width="2"/><path d="m165 102 4 4-4 4 4 4" fill="none" stroke="#ff536b" stroke-width="2"/>
+</svg>
