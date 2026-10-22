@@ -1,5 +1,6 @@
 """Optional Playwright checks; serve the repository's parent on localhost:8000."""
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE = os.environ.get('ARCADE_TEST_URL', 'http://127.0.0.1:8000/08_my-arcade/')
 CLOCK = """
@@ -18,9 +19,9 @@ with sync_playwright() as p:
         context.add_init_script(CLOCK)
         page = context.new_page(); errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
-        page.goto(BASE); page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count() == 7
-        page.get_by_role('link', name='LIGHTS OUTを開く', exact=False).click()
+        page.goto(BASE); page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count() == 6
+        launch_game(page, 'LIGHTS OUT')
         assert page.locator('#message').inner_text() == 'タップで十字に反転\nすべて点灯でクリア！'
         assert page.locator('#sound').inner_text() == 'SOUND ON'
         assert page.locator('.cell').count() == 25

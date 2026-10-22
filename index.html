@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="./css/arcade.css">
   <script src="./js/arcade.js" defer></script>
 </head>
-<body>
+<body class="arcade-home">
   <a class="skip-link" href="#games">ゲーム一覧へスキップ</a>
   <header class="site-header">
     <a class="brand" href="./index.html" aria-label="MY ARCADE ホーム"><span class="brand-icon" aria-hidden="true">▦</span> MY ARCADE<span class="brand-dot">®</span></a>
@@ -33,9 +33,20 @@
         <span id="game-count" class="game-count">LOADING…</span>
       </div>
       <p id="load-status" class="load-status" role="status" aria-live="polite">筐体の電源を入れています…</p>
-      <div id="game-list" class="game-grid" aria-busy="true"></div>
+      <div id="game-list" class="game-carousel" aria-busy="true" role="region" aria-roledescription="カルーセル" aria-label="ゲーム筐体"></div>
+      <div id="game-selection" class="game-selection" hidden>
+        <div class="selection-info" aria-live="polite" aria-atomic="true">
+          <h3 id="selected-title"></h3>
+          <p id="selected-description"></p>
+        </div>
+        <div class="selection-actions">
+          <button id="previous-game" class="carousel-nav" type="button" aria-label="前のゲーム">←</button>
+          <a id="play-game" class="primary-link">PLAY <span aria-hidden="true">↗</span></a>
+          <button id="next-game" class="carousel-nav" type="button" aria-label="次のゲーム">→</button>
+        </div>
+      </div>
       <noscript><p class="load-status">ゲーム一覧を表示するには、JavaScriptを有効にしてください。</p></noscript>
-      <div class="room-instructions"><span aria-hidden="true">↳</span> 筐体をクリック / タップでスタート<span class="keyboard-note">TABで選択 · ENTERで決定</span></div>
+      <div class="room-instructions"><span aria-hidden="true">↔</span> スワイプで選択 · 中央の筐体でスタート<span class="keyboard-note">← → で選択 · ENTERでスタート</span></div>
     </section>
   </main>
 

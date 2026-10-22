@@ -1,5 +1,6 @@
 """Optional Playwright checks. Serve /workspace on localhost:8000 first."""
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE=os.environ.get('ARCADE_TEST_URL','http://127.0.0.1:8000/08_my-arcade/')
 CLOCK="""
@@ -13,9 +14,9 @@ with sync_playwright() as p:
         context=browser.new_context(viewport={'width':390 if mobile else 1100,'height':844},is_mobile=mobile,has_touch=mobile)
         context.add_init_script(CLOCK)
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-        page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==7
-        page.get_by_role('link',name='BLOCK BREAKERを開く',exact=False).click()
+        page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count()==6
+        launch_game(page, 'BLOCK BREAKER')
         page.evaluate('localStorage.setItem("my-arcade:block-breaker:best","123456")')
         page.reload()
         assert page.locator('#best').inner_text()=='--:--.--'
@@ -94,7 +95,7 @@ with sync_playwright() as p:
             page.evaluate('g.state="ALL CLEAR";tick(16)');check_result_actions()
         page.get_by_role('link',name='← MY ARCADEへ戻る',exact=True).click()
         page.wait_for_url(BASE+'index.html')
-        page.get_by_role('link',name='STACK TOWERを開く',exact=False).click()
+        launch_game(page, 'STACK TOWER')
         page.locator('#start').click();page.evaluate('tick(720)');page.locator('canvas').click()
         assert page.locator('#score').inner_text()=='1'
         assert not errors,errors

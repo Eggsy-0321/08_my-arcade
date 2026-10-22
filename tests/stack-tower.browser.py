@@ -2,6 +2,7 @@
 Playwright is only a test tool, not a game dependency.
 """
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE = os.environ.get('ARCADE_TEST_URL', 'http://127.0.0.1:8000/08_my-arcade/')
 CLOCK = """
@@ -27,9 +28,9 @@ with sync_playwright() as p:
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     page.goto(BASE)
-    page.locator('#game-list .cabinet').last.wait_for()
-    assert page.locator('#game-list .cabinet').count() == 7
-    page.get_by_role('link', name='STACK TOWERを開く', exact=False).click()
+    page.locator('#game-list .is-selected').wait_for()
+    assert page.locator('#game-list .cabinet').count() == 6
+    launch_game(page, 'STACK TOWER')
     page.wait_for_function('typeof StackTowerRules !== "undefined"')
     # Observe production rule calls without adding a debug API to the game.
     page.evaluate("""() => {
@@ -97,10 +98,10 @@ with sync_playwright() as p:
     page.reload()
     assert page.locator('#best').inner_text() == '60'
     page.locator('.home').click()
-    page.locator('#game-list .cabinet').last.wait_for()
-    page.get_by_role('link', name='SAMPLE GAMEを開く', exact=False).click()
-    assert page.locator('.sample-badge').inner_text() == '起動確認 OK'
-    print('PASS: miss, GAME OVER, retry, persisted best, return link, sample page', flush=True)
+    page.locator('#game-list .is-selected').wait_for()
+    assert page.locator('#game-list .cabinet').count() == 6
+    assert 'SAMPLE GAME' not in page.locator('#game-list').inner_text()
+    print('PASS: miss, GAME OVER, retry, persisted best, return link, six published games', flush=True)
     assert not errors, errors
     context.close()
     for failure in ['get', 'set']:

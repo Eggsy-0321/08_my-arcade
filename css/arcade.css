@@ -66,3 +66,66 @@ h2 { margin: 0; font-size: 23px; letter-spacing: 2px; }.heading-dot { color: var
 @media (max-width: 600px) { .site-header { min-height: 68px; padding: 0 22px; }.brand { font-size: 16px; }.open-sign { font-size: 8px; letter-spacing: 0; }.open-sign > span { margin-right: 4px; }.welcome { padding: 54px 18px 24px; }.eyebrow { font-size: 8px; letter-spacing: 2px; }.neon-sign { padding: 12px 14px; letter-spacing: -1px; }.welcome-copy { font-size: 13px; letter-spacing: .8px; }.welcome-note { font-size: 10px; }.wall-light { top: 160px; height: 35px; width: 5px; }.arcade-room { padding: 14px 24px 0; }.section-heading { gap: 10px; align-items: center; }h2 { font-size: 19px; letter-spacing: 1px; }.section-heading .eyebrow { font-size: 7px; letter-spacing: 1px; }.game-count { font-size: 8px; padding: 4px 6px; }.game-grid { gap: 24px; padding: 30px 3px 35px; }.cabinet-marquee { margin: 5px; padding: 7px 4px; min-height: 45px; gap: 3px; }.marquee-title { font-size: 12px; }.marquee-star { font-size: 8px; }.cabinet-bezel { margin: 3px 7px 0; padding: 7px 5px 3px; }.cabinet-controls { padding: 0 15px; gap: 8px; }.cabinet-panel { padding: 12px; }.cabinet-title { font-size: 15px; }.screen-prompt { font-size: 7px; bottom: 5px; }.keyboard-note { display: none; }.site-footer { padding: 24px; flex-direction: column; gap: 6px; font-size: 8px; }.room-instructions { font-size: 10px; } }
 @media (max-width: 460px) { .game-grid { grid-template-columns: minmax(0, 290px); justify-content: center; }.marquee-title { font-size: 17px; }.cabinet-marquee { min-height: 53px; }.cabinet-panel { padding: 16px 20px; }.cabinet-title { font-size: 18px; }.cabinet-bezel { margin: 3px 13px 0; padding: 12px 10px 4px; }.screen-prompt { font-size: 9px; }.cabinet-controls { padding: 0 28px; }.sample-main { padding: 28px 20px 45px; } }
 @media (prefers-reduced-motion: reduce) { .cabinet { transition: none; } }
+
+/* The portal keeps the original pixel cabinets in a flat, circular stage. */
+.arcade-home { min-height: 100svh; }
+.arcade-home .site-header { min-height: 54px; }
+.arcade-home .welcome { padding: 18px 18px 8px; }
+.arcade-home .welcome .eyebrow, .arcade-home .welcome-note, .arcade-home .welcome-rule { display: none; }
+.arcade-home .neon-sign { font-size: clamp(28px, 4vw, 44px); padding: 5px 16px; margin-bottom: 4px; }
+.arcade-home .welcome-copy { margin: 8px 0 0; font-size: 12px; }
+.arcade-home .wall-light { top: 25px; height: 44px; }
+.arcade-home .arcade-room { padding: 8px 24px 0; }
+.arcade-home .section-heading { padding-bottom: 8px; }
+.arcade-home h2 { font-size: 17px; }
+.game-carousel { --cabinet-width: clamp(210px, 62vw, 280px); --step: calc(var(--cabinet-width) + 24px); position: relative; height: 336px; margin: 0 -24px; overflow: hidden; touch-action: pan-y pinch-zoom; user-select: none; background: radial-gradient(ellipse at 50% 100%, #65508430, transparent 65%); }
+.game-carousel .cabinet { position: absolute; top: 22px; left: calc(50% - var(--cabinet-width) / 2); width: var(--cabinet-width); transform: translateX(calc(var(--offset) * var(--step))) scale(.82); transform-origin: center; filter: brightness(.55); opacity: 0; visibility: hidden; transition: transform .25s ease, filter .25s ease, opacity .25s ease, visibility .25s; }
+.game-carousel .cabinet.is-selected { transform: translateX(0) scale(1); filter: brightness(1.06); opacity: 1; visibility: visible; z-index: 2; }
+.game-carousel .cabinet.is-neighbor { opacity: 1; visibility: visible; z-index: 1; }
+.game-carousel .cabinet.reposition { transition: none; }
+.game-carousel .cabinet-marquee { min-height: 45px; margin: 5px; padding: 7px 4px; }
+.game-carousel .marquee-title { font-size: 16px; }
+.game-carousel .cabinet-bezel { margin: 3px 10px 0; padding: 8px 7px 3px; }
+.game-carousel .cabinet-panel { flex: none; padding: 6px 16px; }
+.game-carousel .cabinet-category { display: none; }
+.game-carousel .cabinet-screen { aspect-ratio: 240 / 145; }
+.game-carousel .game-thumbnail { object-fit: contain; background: #11152d; }
+.game-carousel .cabinet-bottom { margin: 0; padding: 0; border: 0; }
+.game-carousel .cabinet-controls { height: 38px; }
+.game-selection { max-width: 520px; margin: 0 auto; text-align: center; }
+.selection-info h3 { margin: 0; font: bold 21px/1.5 Consolas, Meiryo, monospace; color: var(--pink); overflow-wrap: anywhere; }
+.selection-info p { margin: 4px 0 12px; font-size: 12px; color: #b9b4cb; overflow-wrap: anywhere; }
+.selection-actions { display: flex; justify-content: center; align-items: center; gap: 24px; }
+.selection-actions .primary-link { margin: 0; min-width: 154px; padding: 9px 22px; font: bold 18px/1.5 Consolas, monospace; letter-spacing: 3px; }
+.carousel-nav { min-width: 46px; min-height: 46px; border: 1px solid #655670; background: #242237; color: var(--cyan); font-size: 23px; cursor: pointer; }
+.carousel-nav:disabled { opacity: .3; cursor: default; }
+button:focus-visible { outline: 3px solid #fff8b8; outline-offset: 4px; }
+.arcade-home .room-instructions { min-height: 0; margin-top: 14px; padding: 10px 0; font-size: 10px; }
+.arcade-home .site-footer { padding: 12px 24px; flex-direction: row; font-size: 8px; }
+[hidden] { display: none !important; }
+@media (max-width: 600px) {
+  .game-carousel { --step: calc(var(--cabinet-width) - 8px); height: 328px; }
+  .arcade-home .site-header { padding: 0 16px; gap: 8px; }
+  .arcade-home .open-sign { font-size: 7px; }
+  .arcade-home .section-heading .eyebrow { font-size: 7px; }
+  .arcade-home .site-footer > span:last-child { display: none; }
+}
+@media (max-height: 720px) and (max-width: 600px) {
+  .arcade-home .site-header { min-height: 44px; }
+  .arcade-home .welcome { padding: 6px 18px 2px; }
+  .arcade-home .neon-sign { font-size: 25px; padding: 3px 14px; }
+  .arcade-home .section-heading { padding-bottom: 4px; }
+  .arcade-home .section-heading .eyebrow { display: none; }
+  .arcade-home .welcome-copy { display: none; }
+  .game-carousel { --cabinet-width: 200px; height: 255px; }
+  .game-carousel .cabinet { top: 10px; }
+  .game-carousel .cabinet-screen { aspect-ratio: 240 / 120; }
+  .game-carousel .cabinet-marquee { min-height: 38px; }
+  .selection-info h3 { font-size: 19px; }
+  .selection-info p { font-size: 11px; line-height: 1.6; margin-bottom: 8px; }
+  .arcade-home .room-instructions { margin-top: 6px; padding: 4px 0; }
+  .arcade-home .site-footer { padding: 0 24px; font-size: 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-carousel .cabinet { transition: none; }
+}

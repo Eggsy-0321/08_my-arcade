@@ -1,5 +1,6 @@
 """Playwright checks. Serve the repository parent on localhost:8000."""
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE=os.environ.get('ARCADE_TEST_URL','http://127.0.0.1:8000/08_my-arcade/')
 KEY='my-arcade:snake-invaders:best'
@@ -18,9 +19,9 @@ with sync_playwright() as p:
         context.add_init_script(INIT)
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.route('**/snake-invaders/model.js',capture)
-        page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==7
-        page.get_by_role('link',name='SNAKE INVADERSを開く',exact=False).click()
+        page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count()==6
+        launch_game(page, 'SNAKE INVADERS')
         assert page.locator('#sound').inner_text()=='SOUND OFF'
         assert page.locator('#pause').is_disabled()
         for w,h in [(320,568),(360,640),(390,844),(430,932),(1100,844),(844,390)]:
@@ -75,7 +76,7 @@ with sync_playwright() as p:
         page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false})')
         page.locator('#resume').click();page.evaluate('g.snakes[0].y=SnakeInvaders.LIMIT;tick(20)')
         page.locator('#home').click();page.wait_for_url(BASE+'index.html')
-        page.get_by_role('link',name='SNAKE INVADERSを開く',exact=False).click()
+        launch_game(page, 'SNAKE INVADERS')
         assert page.locator('#best').inner_text()=='150' and page.locator('#sound').inner_text()=='SOUND OFF'
         assert not errors,errors
         context.close();print('PASS', 'Android touch' if mobile else 'PC keys','9:16 layout, start, firing, pause/resume, BEST, sound reset, retry/home, visibility',flush=True)
