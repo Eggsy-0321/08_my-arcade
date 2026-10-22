@@ -1,5 +1,6 @@
 """Optional Playwright check; serve the repository's parent directory on port 8000."""
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE=os.environ.get('ARCADE_TEST_URL','http://127.0.0.1:8000/08_my-arcade/')
 KEY='my-arcade:bubble-shooter:best'
@@ -20,9 +21,9 @@ with sync_playwright() as p:
         context.add_init_script(INIT)
         page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
         page.route('**/bubble-shooter/model.js',capture)
-        page.goto(BASE);page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==7
-        page.get_by_role('link',name='BUBBLE SHOOTERを開く',exact=False).click()
+        page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count()==6
+        launch_game(page, 'BUBBLE SHOOTER')
         assert page.locator('#start').is_visible() and page.locator('#home').is_hidden()
         for w,h in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:
             page.set_viewport_size({'width':w,'height':h})
@@ -62,7 +63,7 @@ with sync_playwright() as p:
         assert page.evaluate('frames.size')==1
         page.reload();assert page.locator('#best').inner_text()=='50'
         page.locator('#start').click();page.evaluate('g.board=[{row:14,col:0,color:1}];g.finishResolution();tick(0)')
-        page.locator('#home').click();page.locator('#game-list .cabinet').last.wait_for();assert page.url==BASE+'index.html'
+        page.locator('#home').click();page.locator('#game-list .is-selected').wait_for();assert page.url==BASE+'index.html'
         assert not errors,errors
         context.close();print('PASS','Android touch' if mobile else 'desktop keys','layout, hold, shot, score, storage, retry/home, stopped loop')
     for blocked in ["Object.defineProperty(window,'localStorage',{get(){throw Error('blocked')}})","Storage.prototype.setItem=function(){throw Error('blocked')}"]:

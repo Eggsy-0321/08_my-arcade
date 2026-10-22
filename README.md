@@ -3,12 +3,12 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。筐体をクリック・タップ、またはTabで選択してEnterで開きます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」がプレイできます。
 
 ```text
 index.html                 トップページ
 css/arcade.css             店内・筐体・共通スタイル
-js/arcade.js               JSON読み込みと筐体生成
+js/arcade.js               JSON読み込み・筐体生成・循環カルーセル操作
 data/games.json            ゲーム一覧（配列）
 assets/pixel-scene.svg     サムネイル未指定・読み込み失敗時の代替画像
 games/stack-tower/        STACK TOWER（HTML・CSS・ルール・描画/操作・SVG）
@@ -40,7 +40,7 @@ python -m http.server 8000
    <a href="../../index.html">ゲーム一覧へ戻る</a>
    ```
 
-3. 必要ならローカルのサムネイル画像を配置します（例：`assets/my-game.png`）。推奨比率は240:164です。表示枠に合わせてトリミングされます。
+3. 必要ならローカルのサムネイル画像を配置します（例：`assets/my-game.png`）。推奨比率は240:164です。カルーセルでは画像全体を表示枠内に収めます。
 4. `data/games.json` の配列に次のオブジェクトを追記します。既存項目との間にカンマを入れてください。トップページのHTML・CSS・JSの変更は不要です。
 
    ```json
@@ -74,12 +74,28 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップに公開済み6作品の筐体が表示され、クリック・タップ・Tab/Enterでそれぞれ移動できること。
+- トップに公開済み6作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
 - JSONの取得失敗や構文エラー時に読み込み失敗のメッセージが表示されること。
 - 親フォルダをHTTP配信して`/08_my-arcade/`から開いても、筐体・起動・戻る操作が動作すること。
+
+
+### トップページ UI v2
+
+中央の筐体と作品情報・`01 / 06`形式の位置表示を同期し、左右の筐体は縮小・減光します。約250msの切り替え中は追加操作を受け付けません。横に40px以上、縦移動の1.3倍を超えるドラッグをスワイプとし、移動したジェスチャーの直後450msは筐体・PLAYによる起動を抑止します。縦スクロールとピンチ拡大はブラウザーに任せます。`prefers-reduced-motion`では切り替え演出を省略します。
+
+公開作品0件・取得失敗は案内を表示し、1件では左右ボタンを無効化します。2件では同じ作品の左右の表示用筐体を用意し、どちらの方向にも循環できます。通常のAndroid縦画面に収まる余白を使い、小さい高さや文字拡大時は縦スクロールで内容に到達できます。
+
+親ディレクトリをHTTP配信し、開発用のPython PlaywrightとChromiumが利用できる環境で次を実行します（サイト自体の依存追加はありません）。リポジトリ直下を配信する場合は`ARCADE_TEST_URL=http://127.0.0.1:8000/`を指定してください。
+
+```sh
+node --test tests/*.test.cjs
+python tests/arcade.browser.py
+```
+
+カルーセルのブラウザーテストでは320×568・360×640・390×844・430×932・1280×800、実タッチイベントによる左右スワイプ、循環、誤起動抑止、左右筐体・中央筐体・PLAY、全6作品のURL、キーボード・連続操作・フォーカス・動きを減らす設定、0/1/2/3/9件、非公開作品の除外、JSON・画像の失敗、サブパス遷移を確認します。既存6作品のブラウザーテストも新しい選択操作に対応しています。実機Android、Firefox/Safari、GitHub Pages本番配信は別途確認が必要です。
 
 
 ## STACK TOWER

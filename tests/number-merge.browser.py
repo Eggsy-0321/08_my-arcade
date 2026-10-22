@@ -1,5 +1,6 @@
 """Run after serving the repository's parent directory on port 8000."""
 import os
+from arcade_helpers import launch_game
 from playwright.sync_api import sync_playwright
 BASE = os.environ.get('ARCADE_TEST_URL', 'http://127.0.0.1:8000/08_my-arcade/')
 KEY = 'my-arcade:number-merge:best'
@@ -24,9 +25,9 @@ with sync_playwright() as p:
             route.fulfill(response=response, body=response.text() + CAPTURE)
         page.route('**/number-merge/model.js', model_route)
         page.goto(BASE)
-        page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count() == 7
-        page.get_by_role('link', name='NUMBER MERGEを開く', exact=False).click()
+        page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count() == 6
+        launch_game(page, 'NUMBER MERGE')
         assert page.locator('#start-best').inner_text() == '--:--.--'
         assert not page.locator('#retry').is_visible() and not page.locator('#home').is_visible()
         page.evaluate('tick(5000)'); assert page.locator('#time').inner_text() == '00:00.00'
@@ -84,8 +85,8 @@ with sync_playwright() as p:
         assert page.locator('#screen-title').inner_text()=='GAME OVER'
         assert page.evaluate(f'localStorage.getItem("{KEY}")') == '500'
         final=page.locator('#time').inner_text(); page.evaluate('tick(1000)'); assert page.locator('#time').inner_text()==final
-        page.locator('#home').click(); page.locator('#game-list .cabinet').last.wait_for()
-        assert page.locator('#game-list .cabinet').count()==7
+        page.locator('#home').click(); page.locator('#game-list .is-selected').wait_for()
+        assert page.locator('#game-list .cabinet').count()==6
         assert not errors,errors
         print('PASS', 'mobile native touch' if mobile else 'desktop keyboard', 'timer, clear/over, storage, retry/home, layout, animations')
         context.close()
