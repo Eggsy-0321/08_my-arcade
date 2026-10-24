@@ -65,7 +65,7 @@
   {
     "id": "flashlight-maze",
     "title": "FLASHLIGHT MAZE",
-    "description": "20秒で迷路を記憶。懐中電灯の光を頼りに最速脱出を目指そう。",
+    "description": "10秒で迷路を記憶。懐中電灯の光を頼りに最速脱出を目指そう。",
     "category": "記憶・迷路",
     "thumbnail": "./games/flashlight-maze/thumbnail.svg",
     "url": "./games/flashlight-maze/index.html",

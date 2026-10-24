@@ -29,21 +29,29 @@ with sync_playwright() as p:
         context.add_init_script(CLOCK);page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(BASE);launch_game(page,'FLASHLIGHT MAZE');page.evaluate(OBSERVE)
         assert page.locator('#start').is_visible()
-        page.evaluate('advance(3000)');assert page.locator('#time').inner_text()=='20'
+        page.evaluate('advance(3000)');assert page.locator('#time').inner_text()=='10'
         page.locator('#start').click();initial=page.evaluate('JSON.stringify(g.board)')
         assert page.evaluate('g.state')=='MEMORY'
+        assert page.evaluate('g.board.length===17 && g.board.every(row=>row.length===17)')
+        if mobile:
+            for width,height in [(320,568),(360,640),(390,844),(430,932)]:
+                page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(60)
+                assert page.evaluate('document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight')
+                assert page.locator('canvas').bounding_box()['width']/17>=14
+                page.screenshot(path=f'/tmp/flashlight-balance-memory-{width}.png')
+            page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60)
         page.keyboard.press('ArrowDown');assert page.evaluate('g.player.y')==1
         assert page.locator('#down').is_disabled()
-        page.evaluate('advance(3000)');page.locator('#pause').click();assert page.evaluate('g.memory')==17000
+        page.evaluate('advance(3000)');page.locator('#pause').click();assert page.evaluate('g.memory')==7000
         assert page.evaluate("Array.from(document.querySelector('canvas').getContext('2d').getImageData(0,0,520,520).data).filter((_,i)=>i%4!==3).every(v=>v===0)")
-        page.evaluate('advance(9000)');assert page.evaluate('g.memory')==17000
-        page.locator('#resume').click();page.evaluate('advance(16999)');assert page.evaluate('g.state')=='MEMORY'
+        page.evaluate('advance(9000)');assert page.evaluate('g.memory')==7000
+        page.locator('#resume').click();page.evaluate('advance(6999)');assert page.evaluate('g.state')=='MEMORY'
         page.evaluate('tick(1)');assert page.evaluate('g.state')=='ESCAPE';assert page.locator('#time').inner_text()=='00:00.00'
         assert not page.locator('#down').is_disabled()
         # Raster output: fully black outside circle; near wall remains visible; goal hidden.
         assert page.evaluate("Array.from(document.querySelector('canvas').getContext('2d').getImageData(460,460,40,40).data).filter((_,i)=>i%4!==3).every(v=>v===0)")
         assert page.evaluate("document.querySelector('canvas').getContext('2d').getImageData(60,20,1,1).data[0]")>0
-        assert not page.evaluate('g.visible(11,11)')
+        assert not page.evaluate('g.visible(15,15)')
         direction=page.evaluate(NEXT)
         key={'up':'ArrowUp','down':'ArrowDown','left':'ArrowLeft','right':'ArrowRight'}[direction]
         # A single physical tap / keydown moves exactly one cell.
@@ -91,7 +99,7 @@ with sync_playwright() as p:
         assert page.evaluate('JSON.stringify(g.board)')!=initial
         page.set_viewport_size({'width':844,'height':390});page.wait_for_timeout(80);assert page.evaluate('g.state')=='PAUSED'
         page.set_viewport_size({'width':390 if mobile else 1100,'height':844});page.wait_for_timeout(80);assert page.evaluate('g.state')=='PAUSED'
-        page.locator('#resume').click();page.evaluate('advance(20000)');page.evaluate('advance(1234)');page.evaluate(SOLVE)
+        page.locator('#resume').click();page.evaluate('advance(10000)');page.evaluate('advance(1234)');page.evaluate(SOLVE)
         assert page.evaluate('g.state')=='CLEAR';assert page.locator('#final-time').inner_text()=='00:01.23'
         assert page.locator('#final-best').inner_text()=='00:01.23'
         assert page.evaluate('localStorage.getItem("my-arcade:flashlight-maze:best")')=='1234'
@@ -106,7 +114,7 @@ with sync_playwright() as p:
             assert page.locator('#home').bounding_box()['y']+page.locator('#home').bounding_box()['height']<=height
         page.screenshot(path=f'/tmp/flashlight-clear-{mobile}.png')
         for duration in [2000,1000]:
-            page.locator('#retry').click();page.evaluate('advance(20000)');page.evaluate('advance('+str(duration)+')');page.evaluate(SOLVE)
+            page.locator('#retry').click();page.evaluate('advance(10000)');page.evaluate('advance('+str(duration)+')');page.evaluate(SOLVE)
             assert page.locator('#final-best').inner_text()==('00:01.23' if duration==2000 else '00:01.00')
         page.locator('#sound').click();page.reload();page.evaluate(OBSERVE);assert page.locator('#sound').inner_text()=='SOUND OFF';assert page.locator('#best').inner_text()=='00:01.00'
         page.locator('#start').click()
@@ -117,7 +125,7 @@ with sync_playwright() as p:
             for d in ['up','down','left','right']:
                 box=page.locator('#'+d).bounding_box();assert box['width']>=44 and box['height']>=44 and box['y']+box['height']<=height
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60)
-        page.locator('#resume').click();page.evaluate('advance(20000)');page.screenshot(path=f'/tmp/flashlight-escape-{mobile}.png')
+        page.locator('#resume').click();page.evaluate('advance(10000)');page.screenshot(path=f'/tmp/flashlight-escape-{mobile}.png')
         page.locator('#pause').click();page.locator('#home').click();page.wait_for_url(BASE+'index.html')
         assert not errors,errors;context.close()
         print('PASS:', 'Android touch' if mobile else 'PC keyboard', 'title→CLEAR, memory, holds/cancel, rendering, pause/sleep/rotation, clocks, best, retry/home, layouts',flush=True)
@@ -131,13 +139,13 @@ with sync_playwright() as p:
         page.goto(BASE+'games/flashlight-maze/');page.evaluate(OBSERVE)
         if failure=='invalid':page.evaluate('localStorage.setItem("my-arcade:flashlight-maze:best","NaN")');page.reload();page.evaluate(OBSERVE)
         for duration in [1000,2000]:
-            page.locator('#start' if duration==1000 else '#retry').click();page.evaluate('advance(20000)');page.evaluate(f'advance({duration})');page.evaluate(SOLVE)
+            page.locator('#start' if duration==1000 else '#retry').click();page.evaluate('advance(10000)');page.evaluate(f'advance({duration})');page.evaluate(SOLVE)
             assert page.locator('#final-best').inner_text()=='00:01.00'
         assert not errors,errors;context.close();print('PASS:',failure,flush=True)
     context=browser.new_context(viewport={'width':390,'height':844});page=context.new_page();page.goto(BASE+'games/flashlight-maze/');page.evaluate(OBSERVE)
     page.evaluate("() => {window.tones=0;const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;return make.call(this)}}")
-    page.locator('#start').click();page.wait_for_timeout(20100);assert page.evaluate('g.state')=='ESCAPE'
+    page.locator('#start').click();page.wait_for_timeout(10100);assert page.evaluate('g.state')=='ESCAPE'
     direction=page.evaluate(NEXT);page.locator('#'+direction).click();assert page.evaluate('tones')>=1
     page.evaluate('g.player={x:1,y:1}');page.evaluate(SOLVE);assert page.evaluate('g.state')=='CLEAR';assert page.evaluate('tones')>=4
     assert page.evaluate('g.elapsed')>0;page.screenshot(path='/tmp/flashlight-real.png');context.close();browser.close()
-    print('PASS: real 20-second transition, animation frames and Web Audio',flush=True)
+    print('PASS: real 10-second transition, animation frames and Web Audio',flush=True)

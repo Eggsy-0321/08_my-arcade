@@ -1,8 +1,8 @@
 'use strict';
 const FlashlightMaze = (() => {
-  const C = Object.freeze({ size: 13, memoryMs: 20000, lightRadius: 3, minPath: 32, generationAttempts: 24, repeatDelay: 280, repeatMs: 130, sleepGap: 2000 });
+  const C = Object.freeze({ size: 17, memoryMs: 10000, lightRadius: 3, minPath: 60, generationAttempts: 24, repeatDelay: 280, repeatMs: 130, sleepGap: 2000 });
   const directions = Object.freeze({ up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] });
-  const start = { x: 1, y: 1 }, goal = { x: 11, y: 11 };
+  const start = { x: 1, y: 1 }, goal = { x: C.size - 2, y: C.size - 2 };
   function path(board) {
     const queue = [[start]], seen = new Set(['1,1']);
     for (let i = 0; i < queue.length; i++) {
@@ -33,9 +33,9 @@ const FlashlightMaze = (() => {
   }
   function fallback(transpose = false) {
     const board = Array.from({ length: C.size }, () => Array(C.size).fill(1));
-    for (let row = 0; row < 6; row++) {
-      for (let x = 1; x <= 11; x++) board[row * 2 + 1][x] = 0;
-      if (row < 5) board[row * 2 + 2][row % 2 ? 1 : 11] = 0;
+    for (let row = 0; row < (C.size - 1) / 2; row++) {
+      for (let x = 1; x <= C.size - 2; x++) board[row * 2 + 1][x] = 0;
+      if (row < (C.size - 3) / 2) board[row * 2 + 2][row % 2 ? 1 : C.size - 2] = 0;
     }
     return transpose ? board.map((row, y) => row.map((_, x) => board[x][y])) : board;
   }
