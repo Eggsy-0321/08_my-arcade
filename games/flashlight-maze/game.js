@@ -56,15 +56,15 @@
         ctx.strokeStyle = '#526481'; ctx.lineWidth = 1; ctx.strokeRect(x * cell + 2, y * cell + 2, cell - 4, cell - 4);
       }
     }
-    ctx.font = `bold ${cell * .6}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = `bold ${cell * .7}px monospace`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillStyle = '#28697a'; ctx.fillText('S', (origin.x + .5) * cell, (origin.y + .5) * cell);
     // Hide the entire goal marker until its center is within the light circle.
     if (game.visible(goal.x, goal.y)) {
       ctx.fillStyle = '#ed398d'; ctx.fillRect((goal.x + .12) * cell, (goal.y + .12) * cell, cell * .76, cell * .76);
       ctx.fillStyle = '#fff'; ctx.fillText('G', (goal.x + .5) * cell, (goal.y + .5) * cell);
     }
-    ctx.beginPath(); ctx.arc((game.player.x + .5) * cell, (game.player.y + .5) * cell, cell * .28, 0, Math.PI * 2);
-    ctx.fillStyle = '#04c7e6'; ctx.fill(); ctx.strokeStyle = '#075064'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.arc((game.player.x + .5) * cell, (game.player.y + .5) * cell, cell * .32, 0, Math.PI * 2);
+    ctx.fillStyle = '#04c7e6'; ctx.fill(); ctx.strokeStyle = '#075064'; ctx.lineWidth = cell * .07; ctx.stroke();
     ctx.restore();
   }
   function sync() {
@@ -90,7 +90,7 @@
     $('phase').textContent = memory ? 'MEMORIZE' : 'ESCAPE TIME';
     $('time').textContent = memory ? String(Math.ceil(game.memory / 1000)) : format(game.elapsed);
   }
-  function start() { clearInput(); unlock(); game.start(); lastFrame = performance.now(); sync(); $('pause').focus({ preventScroll: true }); $('status').textContent = '20秒間、迷路を記憶してください。'; }
+  function start() { clearInput(); unlock(); game.start(); lastFrame = performance.now(); sync(); $('pause').focus({ preventScroll: true }); $('status').textContent = '10秒間、迷路を記憶してください。'; }
   function pause(at = performance.now()) { clearInput(); if (at - lastFrame > C.sleepGap) at = lastFrame; if (game.pause(at)) { sync(); $('resume').focus({ preventScroll: true }); } }
   $('start').addEventListener('click', start); $('retry').addEventListener('click', start); $('restart').addEventListener('click', start);
   $('pause').addEventListener('click', () => pause());
