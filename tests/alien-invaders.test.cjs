@@ -90,7 +90,7 @@ test('0.01秒表示・比較用整数と不正BESTの拒否', () => {
   assert.equal(record('4012'), 4012);
 });
 test('一覧登録・ローカル参照・サブパスHOME・既存6作品は登録維持', () => {
-  const games = JSON.parse(fs.readFileSync('data/games.json', 'utf8')); assert.equal(games.length, 7); assert.equal(games[6].id, 'alien-invaders'); assert.equal(games[6].status, 'published');
+  const games = JSON.parse(fs.readFileSync('data/games.json', 'utf8')); assert.equal(games.length, 8); assert.equal(games[6].id, 'alien-invaders'); assert.equal(games[6].status, 'published');
   for (const g of games) { assert.ok(fs.existsSync(g.url)); assert.ok(fs.existsSync(g.thumbnail)); }
   const html = fs.readFileSync('games/alien-invaders/index.html', 'utf8'), home = html.match(/id="home" href="([^"]+)"/)[1];
   assert.equal(new URL(home, 'https://example.com/08_my-arcade/games/alien-invaders/').pathname, '/08_my-arcade/index.html');

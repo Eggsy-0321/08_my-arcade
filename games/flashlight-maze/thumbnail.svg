@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="164" viewBox="0 0 240 164">
+<defs><clipPath id="light"><circle cx="112" cy="87" r="55"/></clipPath></defs>
+<rect width="240" height="164" fill="#060a15"/><g clip-path="url(#light)"><rect width="240" height="164" fill="#fff4cb"/>
+<path d="M40 40H200V140H40ZM72 40V108H104V140M104 40V76H168V108H136V140M40 76H72M168 40V76M200 108H168" fill="none" stroke="#2d405d" stroke-width="12"/>
+<rect x="144" y="82" width="17" height="17" fill="#ed398d"/><text x="152" y="95" fill="white" font-family="monospace" font-size="14" text-anchor="middle">G</text></g>
+<circle cx="112" cy="87" r="8" fill="#04c7e6" stroke="#075064" stroke-width="2"/>
+<text x="120" y="23" text-anchor="middle" fill="#71efff" font-family="monospace" font-weight="bold" font-size="17">FLASHLIGHT MAZE</text>
+<text x="120" y="155" text-anchor="middle" fill="#ff85d1" font-family="monospace" font-size="10">MEMORIZE. LIGHT. ESCAPE.</text></svg>

@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」がプレイできます。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」「FLASHLIGHT MAZE」がプレイできます。
 
 ```text
 index.html                 トップページ
@@ -18,6 +18,7 @@ games/bubble-shooter/     BUBBLE SHOOTER
 games/snake-invaders/     SNAKE INVADERS
 games/lights-out/         LIGHTS OUT
 games/alien-invaders/     ALIEN INVADERS
+games/flashlight-maze/    FLASHLIGHT MAZE
 tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
@@ -75,7 +76,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップに公開済み7作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
+- トップに公開済み8作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
@@ -85,7 +86,7 @@ python -m http.server 8000
 
 ### トップページ UI v2
 
-中央の筐体と作品情報・`01 / 07`形式の位置表示を同期し、左右の筐体は縮小・減光します。約250msの切り替え中は追加操作を受け付けません。横に40px以上、縦移動の1.3倍を超えるドラッグをスワイプとし、移動したジェスチャーの直後450msは筐体・PLAYによる起動を抑止します。縦スクロールとピンチ拡大はブラウザーに任せます。`prefers-reduced-motion`では切り替え演出を省略します。
+中央の筐体と作品情報・`01 / 08`形式の位置表示を同期し、左右の筐体は縮小・減光します。約250msの切り替え中は追加操作を受け付けません。横に40px以上、縦移動の1.3倍を超えるドラッグをスワイプとし、移動したジェスチャーの直後450msは筐体・PLAYによる起動を抑止します。縦スクロールとピンチ拡大はブラウザーに任せます。`prefers-reduced-motion`では切り替え演出を省略します。
 
 公開作品0件・取得失敗は案内を表示し、1件では左右ボタンを無効化します。2件では同じ作品の左右の表示用筐体を用意し、どちらの方向にも循環できます。通常のAndroid縦画面に収まる余白を使い、小さい高さや文字拡大時は縦スクロールで内容に到達できます。
 
@@ -329,3 +330,32 @@ git diff --check
 実機Androidでのマルチタッチ感触、アプリ切替・スリープ・画面回転、アドレスバー伸縮、音量・連射音の聴感、40〜60秒を目安とした難易度調整は別途確認が必要です。Safari/Firefox、GitHub Pages本番配信も未確認です。
 
 2026-10-22、Node.js 24とヘッドレスChromiumで全76件のルールテスト（新作14件）、新作・カルーセル・既存6作品の全ブラウザーテスト、JavaScript構文・差分チェックが成功。390px縦画面・320pxのCLEAR画面・PC実フレームのスクリーンショットを確認しました。実機Androidは未確認です。
+
+
+## FLASHLIGHT MAZE
+
+第8作。`games/flashlight-maze/index.html` またはトップの8番目の筐体から起動します。既存7作品の本体・共通UI・カルーセル実装は変更していません。HTML/CSS/JavaScriptとローカルSVGのみで、外部依存・ビルド工程はありません。
+
+- START/RESTART/RETRYで新しい13×13迷路を生成。左上(1,1)から右下(11,11)へ、必ず到達できる通路を深さ優先探索で掘ります。最短32歩以上を採用し、24回で条件を満たさなければ到達可能な蛇行迷路へ切り替えます。直前と同じ迷路も避け、固定乱数でも生成が終了します。
+- MEMORY中は20秒間、全体・S・Gを表示し移動禁止。自動暗転後にESCAPE TIMEを開始します。中心から半径3マスの円でクリップし、光は壁を通過します。円外は完全な黒で、探索履歴は残りません。Gは中心が照射範囲に入ったときだけ描画します。時間制限・ライフ・GAME OVER・全体再確認はありません。
+- 下部の方向ボタンを1回押すと1マス移動。280ms長押し後に130ms間隔で連続移動。PCは矢印・WASD。離す・キャンセル・ボタン外移動・PAUSE・終了・再開始で入力を解除します。
+- PAUSEは迷路を完全に隠し、両時計・移動を停止。タブ非表示・blur・pagehide・画面方向変更で自動PAUSEし、手動RESUMEで再開します。描画フレームが2秒以上途切れた場合も最後のフレーム時刻でPAUSEし、スリープからの時間加算を防ぎます。
+- CLEARで迷路全体を表示し、迷路の下にTIME/BEST・RETRY・HOMEを表示。記録は記憶20秒とPAUSEを除いた脱出時間で、最速のみ `my-arcade:flashlight-maze:best` にミリ秒で保存。ストレージ利用不可時はページ内で保持します。HOMEはサブパス配信対応の `../../index.html`。
+- Web Audioによる短い移動音とCLEAR音のみ。SOUND設定は `my-arcade:flashlight-maze:sound`。音声APIの不在・例外でも継続できます。調整値は `model.js` の `C` に集約しています。
+
+検証コマンド（Python PlaywrightとChromiumは開発時のみ使用）：
+
+```sh
+node --check games/flashlight-maze/model.js
+node --check games/flashlight-maze/game.js
+node --test --test-isolation=none tests/*.test.cjs
+python tests/flashlight-maze.browser.py
+python tests/arcade.browser.py
+# 既存7作品も tests/<game>.browser.py を実行
+```
+
+ルールテスト12件はランダム1000迷路の到達性・全通路の接続・境界・経路長、固定乱数の生成上限、時計と状態遷移、1マス移動・壁・連続入力、照射判定、PAUSE/RESUME/RESTART/CLEAR、BEST値と登録を検証します。新作ブラウザーテストはPC/Android相当の一連の操作、ネイティブタッチ・長押し・キャンセル・ボタン外移動、Canvasの黒画素・壁越し照射、記憶中と脱出中の停止、非表示・blur・pagehide・回転・スリープ相当、記録保存と再読み込み、RETRY/HOME、320×568〜430×932・PC・横画面の配置、ストレージ/音声例外6条件、実時間20秒と実Web Audioを確認します。既存テストの変更は8作品登録に伴う件数・循環位置の更新のみです。
+
+Android実機では、長押し速度・指を離す/外す操作、アプリ切替・スリープ・回転、アドレスバーとナビゲーション領域の伸縮、光の視認性・効果音を確認してください。実機Android、Safari/Firefox、GitHub Pages本番配信は別途確認が必要です。
+
+2026-10-24、Node.js 24でルールテスト全88件（新作12件）が成功、失敗0件。ヘッドレスChromiumで新作・カルーセル・既存7作品のブラウザーテスト全9本が成功、失敗0本。新作内のPC/Android相当・例外6条件・実時間の9シナリオも成功し、JavaScript構文・差分チェック、脱出/CLEAR画像を確認しました。実機Androidは未確認です。
