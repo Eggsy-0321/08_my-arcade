@@ -109,7 +109,7 @@ test('goal clears, freezes record, reveals whole maze; CLEAR ignores moves/pause
 test('BEST parsing, time formatting, eighth registration and subpath HOME', () => {
   for(const v of [null,undefined,'',' ','-1','NaN','Infinity','{}'])assert.equal(record(v),null);
   assert.equal(record('1234.5'),1234.5);assert.equal(record('0'),0);assert.equal(format(61234),'01:01.23');
-  const games=JSON.parse(fs.readFileSync('data/games.json'));assert.equal(games.length,8);assert.equal(games[7].id,'flashlight-maze');assert.equal(games[7].status,'published');
+  const games=JSON.parse(fs.readFileSync('data/games.json'));assert.equal(games.length,9);assert.equal(games[7].id,'flashlight-maze');assert.equal(games[7].status,'published');
   const html=fs.readFileSync('games/flashlight-maze/index.html','utf8');for(const id of ['start','pause','resume','restart','retry','home'])assert.ok(html.includes(`id="${id}"`));
   const home=html.match(/id="home" href="([^"]+)"/)[1];assert.equal(new URL(home,'https://example.com/08_my-arcade/games/flashlight-maze/').pathname,'/08_my-arcade/index.html');
 });

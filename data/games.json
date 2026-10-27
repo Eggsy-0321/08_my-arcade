@@ -70,5 +70,14 @@
     "thumbnail": "./games/flashlight-maze/thumbnail.svg",
     "url": "./games/flashlight-maze/index.html",
     "status": "published"
+  },
+  {
+    "id": "cycle-runner",
+    "title": "CYCLE RUNNER",
+    "description": "2段ジャンプで夜の街を駆け抜けろ。自転車エンドレスラン。",
+    "category": "アクション",
+    "thumbnail": "./games/cycle-runner/thumbnail.svg",
+    "url": "./games/cycle-runner/index.html",
+    "status": "published"
   }
 ]
