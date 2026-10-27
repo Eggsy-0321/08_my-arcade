@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」「FLASHLIGHT MAZE」がプレイできます。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」「FLASHLIGHT MAZE」「CYCLE RUNNER」がプレイできます。
 
 ```text
 index.html                 トップページ
@@ -19,6 +19,7 @@ games/snake-invaders/     SNAKE INVADERS
 games/lights-out/         LIGHTS OUT
 games/alien-invaders/     ALIEN INVADERS
 games/flashlight-maze/    FLASHLIGHT MAZE
+games/cycle-runner/       CYCLE RUNNER
 tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
@@ -76,7 +77,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップに公開済み8作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
+- トップに公開済み9作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
@@ -370,3 +371,37 @@ Android実機では、長押し速度・指を離す/外す操作、アプリ切
 意図的に短い候補だけを作る乱数列でも24回で打ち切り、17×17の蛇行迷路へ切り替わることを検証しています。通常・転置した代替迷路の両方が最短112歩で条件を満たし、固定乱数0・0.5・0.999999・1でも停止せず直前と異なる迷路を生成します。
 
 2026-10-24、v1.1でルールテスト89件（本作13件）成功・失敗0件、ブラウザーテスト9本（本作・既存7作品・カルーセル）の最終実行が成功。JavaScript構文・差分チェックも成功し、320/360/390/430pxの記憶フェーズ画像を確認しました。カルーセルは並行実行時に1度タイムアウト、ルート配信で異常URL検証に1度失敗しましたが、元のサブパス配信条件で単独再実行し全項目が成功しました。カルーセルのテスト・本体の変更はありません。実機Android、Safari/Firefox、GitHub Pages本番は未確認です。
+
+
+## CYCLE RUNNER v1.0
+
+第9作。`games/cycle-runner/index.html`。HTML/CSS/Vanilla JavaScript、独自Canvas描画・SVG・Web Audioのみ。外部依存・ビルドはありません。既存8作品の本体・記録・共通UI v2は変更していません。
+
+- 自動横スクロールの自転車エンドレスラン。タップ・Spaceで最大2段ジャンプ（両方400px/秒、重力1000px/秒²）、着地で回復。地上・空中とも同じ速度。穴へ接地・木箱/コーン接触で即GAME OVER。距離は10論理pxを1mで表示。速度は110px/秒から距離×0.004で加速し、180px/秒で上限です。
+- START/RETRY/RESUMEは3→2→1（各1秒）→GO!（0.35秒）。表示中は物理・距離・コース・ゲーム時計を停止。PAUSE・Esc、タブ非表示・blur・pagehide・回転・1秒超の描画中断でPAUSE。復帰は手動RESUMEが必要です。
+- Android縦画面にHUD・Canvas・大きなJUMPボタンを配置。Pointer押下だけでジャンプし、長押し・キーリピートを抑止。HOMEはサブパス対応の`../../index.html`。PC・低い横画面にも対応。
+- BEST（整数m）は`my-arcade:cycle-runner:best`、SOUND設定は`my-arcade:cycle-runner:sound`へ保存。ストレージ不可時はページ内で保持。初回操作でAudioContextを有効化し、ジャンプ・2段ジャンプ・着地・衝突・BEST更新を短い合成音で通知。音声APIの不在・例外でも継続できます。
+
+### コース設計と検証
+
+`model.js`の`C`に調整値を集約。乱数関数を注入でき、`seeded(seed)`で再現できます。最初の障害物は440〜560px先。1400pxまでは単独の低い障害物、2200px以降は連続配置も抽選します。穴幅は配置位置の速度×0.32〜0.52秒、障害物は高さ22〜40px。連続配置は0.30秒相当の間隔の2個を1組とし、同じ2段ジャンプの飛行範囲に収めます。組の後には最高速度×最低1.8秒の平地を必ず置き、着地・ジャンプ回復を確保します。難易度は14000pxまで緩やかに変化し、それ以降は上限を維持します。
+
+生成は常に画面外まで先行し、途中で画面内に障害物を追加しません。論理幅360px・自機位置72px・衝突半幅16pxで、最高速度でも画面右端から最初の接触まで最低1.511秒あります。物理は最大1/240秒の小刻みな更新で貫通を防ぎます。
+
+```sh
+node --check games/cycle-runner/model.js
+node --check games/cycle-runner/game.js
+node --test --test-isolation=none tests/*.test.cjs
+# 親ディレクトリを python -m http.server 8000 で配信
+python tests/cycle-runner.browser.py
+python tests/arcade.browser.py
+# tests/<既存8作品>.browser.py も実行
+```
+
+ルールテストはジャンプ上限/回復、同じ地上・空中速度、衝突/穴、加速上限、停止とカウントダウン、RETRY、保存値を検証。シード1〜1000×開始距離0/20000pxの計2000走行で12組ずつ、計24000組（連続6323組・穴7398組）を実物理シミュレーションで突破しました。障害物の0.26秒手前で1段目、頂点で2段目を入力し、次の組の前に着地・回復することを確認しています。これは突破経路の存在の確認であり、人の反応・実機の難易度を保証するものではありません。
+
+ブラウザーテストはPC/Android相当のネイティブタッチ、長押し、開始/再開カウントダウン、ライフサイクル・回転・スリープ相当、BEST/SOUND保存、例外6条件、320〜430px・PC・横画面、一覧起動/HOME、実フレーム・実Web Audioを確認します。
+
+Android実機での操作感・実際の難易度は未確認です。PRマージ後に、2段ジャンプのタイミング、最高速度での視認性・連続配置、長押し、音量/ON-OFF、アプリ切替・スリープ・回転後のPAUSE/カウントダウン、アドレスバー/ナビゲーション領域の伸縮を確認してください。Safari/FirefoxとGitHub Pages本番配信も未確認です。
+
+2026-10-27、Node.jsルールテスト100件成功・失敗0件（新作11件）、Chromiumブラウザーテスト10本成功・失敗0本（新作・既存8作品・カルーセル）。新作内の9シナリオ、JavaScript構文・差分チェックも成功。実音声チェックは固定待機では着地前になるため着地状態を待つ方式に修正しました。実機Androidは未確認です。
