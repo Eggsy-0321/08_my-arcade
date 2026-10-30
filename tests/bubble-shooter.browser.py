@@ -22,7 +22,7 @@ with sync_playwright() as p:
         page=context.new_page();errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
         page.route('**/bubble-shooter/model.js',capture)
         page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
-        assert page.locator('#game-list .cabinet').count()==9
+        assert page.locator('#game-list .cabinet').count()==10
         launch_game(page, 'BUBBLE SHOOTER')
         assert page.locator('#start').is_visible() and page.locator('#home').is_hidden()
         for w,h in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:

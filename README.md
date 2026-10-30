@@ -3,7 +3,7 @@ HTML/CSS/JavaScriptで制作する、ドット絵風のWebゲームセンター�
 
 ## MVP
 
-HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」「FLASHLIGHT MAZE」「CYCLE RUNNER」がプレイできます。
+HTML / CSS / Vanilla JavaScriptのみで動作する静的サイトです。外部依存・ビルドは不要です。トップページは中央フォーカス型の横カルーセルです。スワイプ・左右筐体のタップ・左右ボタン・←/→キーで作品を選び、中央筐体・PLAY・Enterで起動します。Tabでフォーカスを移動できます。「STACK TOWER」「BLOCK BREAKER」「NUMBER MERGE」「BUBBLE SHOOTER」「SNAKE INVADERS」「LIGHTS OUT」「ALIEN INVADERS」「FLASHLIGHT MAZE」「CYCLE RUNNER」「BLOCK FALL」がプレイできます。
 
 ```text
 index.html                 トップページ
@@ -20,6 +20,7 @@ games/lights-out/         LIGHTS OUT
 games/alien-invaders/     ALIEN INVADERS
 games/flashlight-maze/    FLASHLIGHT MAZE
 games/cycle-runner/       CYCLE RUNNER
+games/block-fall/         BLOCK FALL
 tests/                   各作品のルールテスト・任意のブラウザーテスト
 ```
 
@@ -77,7 +78,7 @@ python -m http.server 8000
 
 ## 動作確認
 
-- トップに公開済み9作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
+- トップに公開済み10作品が登録順で表示され、スワイプ・左右筐体タップ・←/→キーで循環選択できること。中央筐体・PLAY・Enterで正しいゲームが起動すること。
 - PC幅とスマホ幅で横方向にはみ出さず、フォーカス枠が見えること。
 - JSONに公開項目を追加すると筐体が増え、`draft`は表示されないこと。
 - `thumbnail`が空または存在しない画像でも代替画像が表示されること。
@@ -405,3 +406,14 @@ python tests/arcade.browser.py
 Android実機での操作感・実際の難易度は未確認です。PRマージ後に、2段ジャンプのタイミング、最高速度での視認性・連続配置、長押し、音量/ON-OFF、アプリ切替・スリープ・回転後のPAUSE/カウントダウン、アドレスバー/ナビゲーション領域の伸縮を確認してください。Safari/FirefoxとGitHub Pages本番配信も未確認です。
 
 2026-10-27、Node.jsルールテスト100件成功・失敗0件（新作11件）、Chromiumブラウザーテスト10本成功・失敗0本（新作・既存8作品・カルーセル）。新作内の9シナリオ、JavaScript構文・差分チェックも成功。実音声チェックは固定待機では着地前になるため着地状態を待つ方式に修正しました。実機Androidは未確認です。
+
+
+## BLOCK FALL v1.0
+
+第10作。`games/block-fall/index.html`。10列×20行、7種類の7-bag、時計回りSRS回転補正、NEXT 1個、HOLDなしのエンドレス落ち物パズルです。1〜4ライン同時消去で100/300/500/800×LEVEL点。10ラインごとにLEVEL上昇、落下間隔800msから毎レベル15%短縮、最短80ms。着地猶予500ms、リセット上限15回。ソフト35ms/1点、ハード即固定/1マス2点です。
+
+下部5ボタンとPC矢印・Spaceに対応。左右は170ms後から50ms間隔で反復し、マルチタッチと入力解除を個別管理します。START/RETRY/RESUMEは3秒カウントダウン。非表示・blur・pagehide・回転・1秒超の描画中断で自動PAUSEし、復帰後は手動再開が必要です。最高スコアと音設定は専用キー `my-arcade:block-fall:best` / `my-arcade:block-fall:sound` に保存します。
+
+ルール・描画を分離し、固定シードで再現可能です。ゲームの外部依存・ビルド工程なし。既存9作品の本体、記録キー、カルーセルUI v2のコードは変更していません。既存テストは登録件数と循環位置の期待値だけを更新しています。数値・ファイル構成・テストコマンド・実機チェックリストは [BLOCK FALL README](games/block-fall/README.md) を参照してください。
+
+2026-10-30 JST：Nodeルールテスト126件成功・失敗0件（本作26件）、Chromiumブラウザーテスト11本成功・失敗0本（本作・既存9作品・カルーセル）。本作内の9シナリオ、構文・差分チェックと画面キャプチャ確認も成功しました。初期検証で見つかったソフト落下の小数時間境界と速度切替時の時間持越しを修正済みです。Android実機、音の聴感、Safari/Firefox、GitHub Pages本番配信は未確認です。
