@@ -1,0 +1,38 @@
+:root { color-scheme: dark; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; background: #101524; color: #edf4ff; }
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 280px; background: radial-gradient(ellipse at top, #222d48, #101524 70%); }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; background: #24334a; border: 1px solid #71829c; border-radius: 5px; cursor: pointer; min-height: 44px; }
+button:active { background: #3b5266; }
+button:disabled { opacity: .45; cursor: default; }
+a { color: #b4e8e1; text-decoration: none; }
+button:focus-visible, a:focus-visible { outline: 3px solid #ffe29b; outline-offset: 2px; }
+[hidden] { display: none !important; }
+.game-shell { width: min(100%, 600px); height: 100vh; height: 100dvh; margin: auto; padding: max(6px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); display: flex; flex-direction: column; gap: 7px; }
+header { display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; font-size: 10px; color: #a0b3cc; }
+.home-top { display: flex; align-items: center; min-height: 28px; }
+.title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; }
+h1 { font-size: clamp(16px, 4.8vw, 26px); letter-spacing: -.6px; margin: 0; white-space: nowrap; } h1 span { color: #8be4ce; }
+.settings { display: flex; gap: 5px; } .settings button { font-size: 10px; padding: 0 7px; }
+.arena { flex: 1; min-height: 0; position: relative; display: flex; justify-content: center; gap: clamp(10px, 3vw, 24px); padding: 3px 0; }
+.board-wrap { height: min(100%, calc((100vw - 126px) * 2)); align-self: center; aspect-ratio: 1 / 2; max-width: calc(100% - 96px); border: 2px solid #7b9ab0; background: #0c1220; box-shadow: 0 0 20px #78d9c31a; }
+#board { display: block; width: 100%; height: 100%; }
+.hud { width: 82px; display: flex; flex-direction: column; gap: clamp(8px, 2vh, 18px); padding: 3px 0; }
+.hud span { display: block; color: #a6b8cd; font-size: 11px; letter-spacing: 1px; }
+.hud strong { display: block; font-size: clamp(15px, 2.8vh, 23px); color: #ffe2a0; overflow-wrap: anywhere; }
+#next { display: block; width: 80px; height: 60px; background: #192337; margin-top: 5px; border: 1px solid #435770; }
+.endless { font-size: 9px; line-height: 1.7; color: #829bb5; margin: auto 0 0; }
+.overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 12px; padding: 12px; background: #0d1424f2; border: 1px solid #566e88; text-align: center; border-radius: 6px; overflow: auto; }
+h2 { font-size: clamp(22px, 6vw, 34px); margin: 0; color: #8be4ce; }
+.overlay p { font-size: 12px; line-height: 1.8; margin: 0; }
+#results { white-space: pre-line; font-size: 18px; color: #ffe2a0; }
+.overlay button { width: min(230px, 90%); min-height: 48px; background: #2d665f; border-color: #8be4ce; font-weight: bold; }
+#home { display: flex; align-items: center; justify-content: center; min-height: 44px; font-size: 12px; }
+#countdown { position: absolute; inset: 0; display: grid; place-items: center; font-size: 80px; font-weight: bold; background: #101524b8; color: #ffe2a0; pointer-events: none; }
+.controls { flex-shrink: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; touch-action: none; user-select: none; -webkit-user-select: none; }
+.controls button { min-width: 0; height: clamp(58px, 10vh, 82px); display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 2px; font-size: 10px; touch-action: none; }
+.controls b { font-size: 24px; font-weight: normal; } .controls button:last-child { border-color: #d7b979; color: #ffe2a0; }
+.help { flex-shrink: 0; margin: 0; text-align: center; font-size: 9px; line-height: 1.6; color: #a5b6cc; }
+@media (max-height: 620px) { .game-shell { gap: 4px; } .hud { gap: 7px; } .endless { display: none; } .help { font-size: 8px; } .overlay { gap: 7px; } }
+@media (orientation: landscape) and (max-height: 540px) { .game-shell { width: min(100%, 850px); display: grid; grid-template-columns: 1fr 180px; grid-template-rows: 28px 1fr 20px; gap: 4px 12px; } header { grid-column: 2; grid-row: 1; } .title-row { grid-column: 2; grid-row: 2; align-self: start; flex-direction: column; } .arena { grid-column: 1; grid-row: 1 / 4; } .controls { grid-column: 2; grid-row: 2; align-self: end; grid-template-columns: repeat(3, 1fr); } .controls button { height: 58px; } .help { grid-column: 2; grid-row: 3; font-size: 7px; } .overlay { gap: 5px; } }
+@media (max-height: 380px) { .game-shell { min-height: 360px; } }

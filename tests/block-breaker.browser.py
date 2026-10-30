@@ -15,7 +15,7 @@ with sync_playwright() as p:
         context.add_init_script(CLOCK)
         page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(BASE);page.locator('#game-list .is-selected').wait_for()
-        assert page.locator('#game-list .cabinet').count()==9
+        assert page.locator('#game-list .cabinet').count()==10
         launch_game(page, 'BLOCK BREAKER')
         page.evaluate('localStorage.setItem("my-arcade:block-breaker:best","123456")')
         page.reload()

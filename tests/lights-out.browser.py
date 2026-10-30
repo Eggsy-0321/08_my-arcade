@@ -20,7 +20,7 @@ with sync_playwright() as p:
         page = context.new_page(); errors = []
         page.on('pageerror', lambda error: errors.append(str(error)))
         page.goto(BASE); page.locator('#game-list .is-selected').wait_for()
-        assert page.locator('#game-list .cabinet').count() == 9
+        assert page.locator('#game-list .cabinet').count() == 10
         launch_game(page, 'LIGHTS OUT')
         assert page.locator('#message').inner_text() == 'タップで十字に反転\nすべて点灯でクリア！'
         assert page.locator('#sound').inner_text() == 'SOUND ON'

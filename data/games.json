@@ -79,5 +79,14 @@
     "thumbnail": "./games/cycle-runner/thumbnail.svg",
     "url": "./games/cycle-runner/index.html",
     "status": "published"
+  },
+  {
+    "id": "block-fall",
+    "title": "BLOCK FALL",
+    "description": "横一列をそろえて、まとめて消そう。7種類のブロックで挑むエンドレスパズル。",
+    "category": "パズル",
+    "thumbnail": "./games/block-fall/thumbnail.svg",
+    "url": "./games/block-fall/index.html",
+    "status": "published"
   }
 ]
