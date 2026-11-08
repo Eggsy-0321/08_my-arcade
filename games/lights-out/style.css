@@ -6,7 +6,7 @@ header, footer { display: flex; justify-content: space-between; align-items: cen
 a { color: #89eefd; text-decoration: none; padding: 10px 0; }
 .marquee { display: flex; align-items: center; justify-content: space-between; gap: 6px; color: #65efff; border-block: 1px solid #305176; margin: 6px 0 12px; padding: 12px 3px; text-shadow: 0 0 16px #21cadb80; }
 h1 { font-size: clamp(17px, 5vw, 24px); margin: 0; }.marquee span { font-size: 10px; color: #ff85d1; }
-.hud { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; font-size: 11px; color: #99aac9; }
+.hud { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 8px; margin-bottom: 10px; font-size: 11px; color: #99aac9; }
 .hud strong { display: block; margin-top: 3px; font-size: clamp(22px, 6vw, 28px); color: #e7faff; font-variant-numeric: tabular-nums; }
 #time { color: #65efff; }
 .arena { position: relative; border: 1px solid #36567b; background: #090f23; }
@@ -33,3 +33,10 @@ footer button { padding: 0 10px; font-size: 10px; }footer { font-size: 9px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 680px) and (orientation: portrait) { .cabinet { width: min(100% - 20px, 340px); margin: 5px auto; }.marquee { margin: 2px 0 6px; padding: 7px 2px; }.hud { margin-bottom: 6px; }.controls { margin: 6px 0; } }
 @media (prefers-reduced-motion: reduce) { #board.wave .cell { animation-name: neon-wave-reduced; } @keyframes neon-wave-reduced { 50% { background: #fff; border-color: #ff99dc; } } }
+
+.pause-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, .pause-panel .button { min-width: 44px; min-height: 44px; }
+#resume { color: #080e20; background: #65efff; border-color: #65efff; }
+#pause-home { background: transparent; border-color: #426485; color: #b4c9de; }

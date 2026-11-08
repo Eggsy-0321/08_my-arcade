@@ -102,6 +102,9 @@ with sync_playwright() as p:
             assert page.locator('#sound').bounding_box()['y'] + page.locator('#sound').bounding_box()['height'] <= height
             cell = page.locator('.cell').first.bounding_box(); assert min(cell['width'], cell['height']) >= 44
         page.set_viewport_size({'width':390 if mobile else 1100,'height':844})
+        # Returning from touch landscape remains paused until explicit RESUME.
+        if page.evaluate('g.state') == 'PAUSED':
+            page.locator('#resume').click()
         old = page.evaluate('g.initial.slice()')
         page.evaluate('g.board=Array(25).fill(true);LightsOut.flip(g.board,0);tick(1000)')
         activate(page.locator('.cell').first); page.evaluate('tick(1000)')
@@ -114,6 +117,103 @@ with sync_playwright() as p:
         assert not errors, errors
         context.close()
         print('PASS:', 'Android touch emulation' if mobile else 'PC mouse', 'navigation, puzzle, timer, reset, pause, visibility, wave, independent records, ties, audio, reload, retry, layout', flush=True)
+    # PAUSE UI pilot: controlled time, real keyboard/touch, lifecycle events, and layout.
+    for mobile in [False, True]:
+        context = browser.new_context(viewport={'width':390, 'height':844}, is_mobile=mobile, has_touch=mobile)
+        context.add_init_script(CLOCK)
+        page = context.new_page(); errors = []
+        page.on('pageerror', lambda error: errors.append(str(error)))
+        page.goto(BASE+'games/lights-out/'); page.evaluate(OBSERVE)
+        page.locator('#start').click(); page.evaluate('tick(1234)')
+        for width, height in [(320,568), (360,640), (390,844), (430,932), (1100,844)]:
+            page.set_viewport_size({'width':width, 'height':height})
+            if page.evaluate('g.state') == 'PLAYING':
+                page.locator('#pause').click()
+            assert page.evaluate('g.state') == 'PAUSED'
+            assert page.locator('#pause-overlay').inner_text() == 'PAUSED\nRESUME\nHOME'
+            assert page.locator('#overlay').is_hidden()
+            assert page.locator('#board').is_hidden()
+            assert page.locator('.cell:enabled').count() == 0
+            assert page.locator('#reset').is_visible() and page.locator('#reset').is_disabled()
+            arena = page.locator('.arena').bounding_box()
+            panel = page.locator('.pause-panel').bounding_box()
+            pause_button = page.locator('#pause').bounding_box()
+            assert pause_button['y'] + pause_button['height'] <= arena['y']
+            assert 240 <= panel['width'] <= 280
+            assert arena['x'] <= panel['x'] and panel['x'] + panel['width'] <= arena['x'] + arena['width']
+            assert arena['y'] <= panel['y'] and panel['y'] + panel['height'] <= arena['y'] + arena['height']
+            assert abs(panel['x'] + panel['width']/2 - arena['x'] - arena['width']/2) < 1
+            assert abs(panel['y'] + panel['height']/2 - arena['y'] - arena['height']/2) < 1
+            assert page.evaluate('document.documentElement.scrollWidth <= innerWidth')
+            assert arena['y'] + arena['height'] <= height
+            for selector in ['#resume', '#pause-home']:
+                box = page.locator(selector).bounding_box()
+                assert min(box['width'], box['height']) >= 44
+                assert box['y'] + box['height'] <= height
+            assert page.locator('#pause-home').bounding_box()['y'] >= page.locator('#resume').bounding_box()['y'] + 44
+            assert page.locator('#pause-overlay').evaluate("e=>getComputedStyle(e).backgroundColor") == 'rgba(0, 0, 0, 0.7)'
+            assert page.locator('.pause-panel').evaluate("e=>[e,...e.querySelectorAll('*')].every(n=>getComputedStyle(n).animationName==='none' && getComputedStyle(n).transitionDuration==='0s')")
+            before = page.evaluate('({board:g.board.slice(),moves:g.moves,time:g.time()})')
+            page.evaluate('tick(9000);document.querySelector(".cell").click()')
+            assert page.evaluate('({board:g.board,moves:g.moves,time:g.time()})') == before
+            page.screenshot(path=f'/tmp/lights-out-pause-{mobile}-{width}.png')
+            if mobile and width > height:
+                assert page.locator('#resume').is_disabled()
+                page.set_viewport_size({'width':390, 'height':844})
+                page.wait_for_function('!document.querySelector("#resume").disabled', polling=50)
+                assert page.evaluate('g.state') == 'PAUSED'
+            page.locator('#resume').tap() if mobile else page.locator('#resume').click()
+            assert page.evaluate('g.state') == 'PLAYING'
+            page.evaluate('tick(250)'); assert page.evaluate('g.time()') == before['time'] + 250
+        page.set_viewport_size({'width':390,'height':844})
+        # Keyboard activation and held activation keys must not leak into board moves.
+        page.locator('#pause').focus(); page.keyboard.press('Enter')
+        assert page.locator('#resume').evaluate('e=>e===document.activeElement')
+        page.keyboard.press('Tab'); assert page.locator('#pause-home').evaluate('e=>e===document.activeElement')
+        page.keyboard.press('Shift+Tab'); page.keyboard.down('Enter'); page.keyboard.down('Enter')
+        assert page.evaluate('g.state') == 'PLAYING'
+        page.keyboard.up('Enter')
+        page.locator('.cell').first.focus(); page.keyboard.press('Space')
+        moves = page.evaluate('g.moves')
+        page.keyboard.down('Space'); page.keyboard.down('Space')
+        assert page.evaluate('g.moves') == moves
+        page.keyboard.up('Space'); assert page.evaluate('g.moves') == moves + 1
+        # A pointer-down that spans PAUSE/RESUME is discarded.
+        page.locator('.cell').first.dispatch_event('pointerdown', {'pointerId':42})
+        page.locator('#pause').click(); page.locator('#resume').click()
+        moves = page.evaluate('g.moves')
+        page.locator('.cell').first.dispatch_event('click', {'pointerId':42, 'detail':1})
+        assert page.evaluate('g.moves') == moves
+        if mobile:
+            cdp = context.new_cdp_session(page)
+            box = page.locator('.cell').first.bounding_box()
+            cdp.send('Input.dispatchTouchEvent', {'type':'touchStart','touchPoints':[{'x':box['x']+10,'y':box['y']+10}]})
+            page.evaluate('document.querySelector("#pause").click();document.querySelector("#resume").click()')
+            cdp.send('Input.dispatchTouchEvent', {'type':'touchEnd','touchPoints':[]})
+            assert page.evaluate('g.moves') == moves
+        # Each automatic pause stays paused when focus/visibility/orientation returns.
+        for event in ['blur', 'pagehide', 'orientationchange']:
+            before = page.evaluate('g.time()')
+            page.evaluate('(event)=>{window.dispatchEvent(new Event(event));tick(5000);window.dispatchEvent(new Event("focus"));window.dispatchEvent(new Event("pageshow"));tick(5000)}', event)
+            assert page.evaluate('g.state') == 'PAUSED' and page.evaluate('g.time()') == before
+            page.locator('#resume').click(); page.evaluate('tick(100)')
+            assert page.evaluate('g.time()') == before + 100
+        if mobile:
+            page.set_viewport_size({'width':844,'height':390})
+            page.wait_for_function('matchMedia("(orientation: landscape) and (pointer: coarse)").matches && g.state === "PAUSED" && document.querySelector("#resume").disabled', polling=50)
+            page.evaluate('document.querySelector("#resume").click();tick(5000)')
+            assert page.evaluate('g.state') == 'PAUSED'
+            page.set_viewport_size({'width':390,'height':844})
+            page.locator('#resume').wait_for(state='visible')
+            page.wait_for_function('!document.querySelector("#resume").disabled', polling=50)
+            assert page.evaluate('g.state') == 'PAUSED'
+            page.locator('#resume').tap(); assert page.evaluate('g.state') == 'PLAYING'
+        page.locator('#pause').click()
+        page.locator('#pause-home').tap() if mobile else page.locator('#pause-home').click()
+        page.wait_for_url(BASE+'index.html')
+        assert not errors, errors
+        context.close()
+        print('PASS: PAUSE panel sizes, actions, timer, keyboard, stale pointer, lifecycle, rotation, HOME', 'touch emulation' if mobile else 'PC', flush=True)
     for failure in ['storage-get', 'storage-set', 'audio-missing', 'audio-throws', 'audio-rejects', 'invalid-records']:
         context=browser.new_context(); context.add_init_script(CLOCK)
         if failure.startswith('storage-'):
