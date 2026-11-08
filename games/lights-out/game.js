@@ -9,6 +9,8 @@
   let bestMoves = record(read('best-moves'), true), bestTime = record(read('best-time'));
   let sound = read('sound') !== 'off', audio = null;
   const game = new Game();
+  const landscapeTouch = matchMedia('(orientation: landscape) and (pointer: coarse)');
+  const boardPointers = new Set();
   function unlockAudio() {
     if (!sound) return;
     try {
@@ -37,7 +39,16 @@
   const cells = Array.from({ length: 25 }, (_, i) => {
     const cell = document.createElement('button');
     cell.className = 'cell'; cell.style.setProperty('--i', i);
-    cell.addEventListener('click', () => move(i)); board.append(cell); return cell;
+    cell.addEventListener('pointerdown', event => {
+      if (game.state === 'PLAYING') boardPointers.add(event.pointerId);
+    });
+    cell.addEventListener('pointercancel', event => boardPointers.delete(event.pointerId));
+    cell.addEventListener('click', event => {
+      // A pointer that began before PAUSE must not become a move after RESUME.
+      if (event.detail > 0 && !boardPointers.delete(event.pointerId)) return;
+      move(i);
+    });
+    board.append(cell); return cell;
   });
   function sync() {
     $('moves').textContent = game.moves; $('time').textContent = format(game.time());
@@ -49,16 +60,17 @@
       cell.setAttribute('aria-label', `${Math.floor(i / 5) + 1}行${i % 5 + 1}列 ${game.board[i] ? 'ON' : 'OFF'}`);
       cell.disabled = game.state !== 'PLAYING';
     });
-    $('overlay').hidden = ['PLAYING', 'WAVE'].includes(game.state);
-    $('start').hidden = game.state !== 'START'; $('resume').hidden = game.state !== 'PAUSED';
+    $('overlay').hidden = game.state !== 'START' && game.state !== 'CLEAR';
+    $('pause-overlay').hidden = game.state !== 'PAUSED';
+    $('resume').disabled = document.hidden || landscapeTouch.matches;
+    $('start').hidden = game.state !== 'START';
     $('result-actions').hidden = $('results').hidden = game.state !== 'CLEAR';
     $('reset').disabled = $('pause').disabled = game.state !== 'PLAYING';
     $('sound').disabled = game.state === 'WAVE';
     $('sound').textContent = sound ? 'SOUND ON' : 'SOUND OFF';
     $('sound').setAttribute('aria-pressed', String(sound));
-    $('screen-title').textContent = game.state === 'PAUSED' ? 'PAUSED' : game.state === 'CLEAR' ? 'CLEAR!' : 'LIGHTS OUT';
+    $('screen-title').textContent = game.state === 'CLEAR' ? 'CLEAR!' : 'LIGHTS OUT';
     $('message').hidden = game.state === 'CLEAR';
-    if (game.state === 'PAUSED') $('message').textContent = 'RESUMEで再開';
   }
   function resultRecord(value, previous, name, formatValue) {
     const best = previous === null ? value : Math.min(value, previous);
@@ -88,21 +100,36 @@
   }
   function pause() {
     if (!game.pause()) return;
-    sync(); $('resume').focus({ preventScroll: true });
+    boardPointers.clear();
+    sync();
+    if (!$('resume').disabled) $('resume').focus({ preventScroll: true });
   }
   $('start').addEventListener('click', start); $('retry').addEventListener('click', start);
   $('reset').addEventListener('click', () => { if (game.reset()) { sync(); $('status').textContent = '同じ問題を最初から再開しました。'; } });
   $('pause').addEventListener('click', pause);
   $('resume').addEventListener('click', () => {
-    if (document.hidden || !game.resume()) return;
-    unlockAudio(); sync(); cells[0].focus({ preventScroll: true });
+    if (document.hidden || landscapeTouch.matches || !game.resume()) return;
+    boardPointers.clear();
+    unlockAudio(); sync(); $('pause').focus({ preventScroll: true });
   });
   $('sound').addEventListener('click', () => {
     if (game.state === 'WAVE') return;
     sound = !sound; save('sound', sound ? 'on' : 'off');
     if (sound) unlockAudio(); sync();
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause();
+    sync();
+  });
+  window.addEventListener('blur', pause);
+  window.addEventListener('pagehide', pause);
+  window.addEventListener('pageshow', sync);
+  window.addEventListener('orientationchange', () => { pause(); sync(); });
+  landscapeTouch.addEventListener('change', () => { pause(); sync(); });
+  document.addEventListener('keydown', event => {
+    if (event.repeat && [' ', 'Enter'].includes(event.key) &&
+        (event.target.matches('.cell') || event.target === $('resume') || event.target === $('pause'))) event.preventDefault();
+  });
   function frame() {
     const previous = game.state; game.update();
     if (previous !== game.state) { sync(); $('retry').focus({ preventScroll: true }); }
