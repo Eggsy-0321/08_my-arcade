@@ -5,6 +5,7 @@
   const key='my-arcade:snake-invaders:best';
   let best=0, sound=false, audio=null, last=null, previous='', pointer=null;
   const keys=new Set();
+  const landscapeTouch=matchMedia('(orientation: landscape) and (pointer: coarse)');
   try { const n=Number(localStorage.getItem(key)); if(Number.isFinite(n)&&n>=0) best=Math.floor(n); } catch { /* Session best is still available. */ }
   const game=new Game({onScore(score) {
     if(score>best) { best=score; try { localStorage.setItem(key,String(best)); } catch { /* Keep session best. */ } }
@@ -43,41 +44,53 @@
   function sync() {
     const state=game.state, start=state==='START', paused=state==='PAUSED', ended=state==='GAME OVER';
     $('score').textContent=String(game.score); $('best').textContent=$('result-best').textContent=String(best);
-    $('overlay').hidden=state==='PLAYING'; $('overlay').classList.toggle('paused',paused);
-    $('start').hidden=$('sound').hidden=$('hint').hidden=!start; $('resume').hidden=!paused; $('result-actions').hidden=!ended; $('result-score').hidden=!ended;
+    $('overlay').hidden=!start&&!ended; $('pause-overlay').hidden=!paused;
+    $('resume').disabled=document.hidden||landscapeTouch.matches;
+    $('start').hidden=$('sound').hidden=$('hint').hidden=!start; $('result-actions').hidden=!ended; $('result-score').hidden=!ended;
     $('pause').disabled=state!=='PLAYING'; $('sound').textContent=`SOUND ${sound ? 'ON' : 'OFF'}`; $('sound').setAttribute('aria-pressed',String(sound));
-    $('screen-title').innerHTML=start ? 'SNAKE<br>INVADERS' : paused ? 'PAUSED' : 'GAME OVER';
+    $('screen-title').innerHTML=start ? 'SNAKE<br>INVADERS' : 'GAME OVER';
     $('message').hidden=!start; $('result-score').textContent=`SCORE ${game.score}`;
     if(state!==previous) {
-      if(paused || ended) { keys.clear(); pointer=null; $(paused ? 'resume' : 'retry').focus({preventScroll:true}); }
+      if(paused || ended) { clearInput(); const button=$(paused ? 'resume' : 'retry'); if(!button.disabled) button.focus({preventScroll:true}); }
       if(ended) $('status').textContent=`GAME OVER。スコア ${game.score}。BEST ${best}。`;
       previous=state;
     }
   }
+  function clearPointer() {
+    const captured=pointer; pointer=null;
+    if(captured!==null&&canvas.hasPointerCapture(captured)) canvas.releasePointerCapture(captured);
+  }
+  function clearInput() { keys.clear(); clearPointer(); }
   function start(retry=false) {
     if(retry) { sound=false; if(audio) void audio.suspend().catch(()=>{}); }
     else if(sound) { const context=soundContext(); if(context) void context.resume().catch(()=>{}); }
-    keys.clear(); pointer=null; last=null; game.start(); sync(); draw(); canvas.focus({preventScroll:true});
+    clearInput(); last=null; game.start(); sync(); draw(); canvas.focus({preventScroll:true});
   }
   function pause() {
-    game.pause(); keys.clear(); pointer=null; last=null;
+    if(game.state!=='PLAYING') return;
+    game.pause(); clearInput(); last=null;
     if(audio) void audio.suspend().catch(()=>{});
     sync();
   }
   $('start').addEventListener('click',()=>start()); $('retry').addEventListener('click',()=>start(true));
   $('pause').addEventListener('click',pause);
-  $('resume').addEventListener('click',()=> { game.resume(); last=null; if(sound&&audio) void audio.resume().catch(()=>{}); sync(); canvas.focus({preventScroll:true}); });
+  $('resume').addEventListener('click',()=> { if(document.hidden||landscapeTouch.matches||game.state!=='PAUSED') return; clearInput(); game.resume(); last=null; if(sound&&audio) void audio.resume().catch(()=>{}); sync(); canvas.focus({preventScroll:true}); });
   $('sound').addEventListener('click',()=> { if(game.state!=='START') return; sound=!sound; if(sound) { const context=soundContext(); if(context) void context.resume().catch(()=>{}); } else if(audio) void audio.suspend().catch(()=>{}); sync(); });
   canvas.tabIndex=0;
   canvas.addEventListener('pointerdown',e=> { if(game.state!=='PLAYING'||pointer!==null||e.button!==0) return; e.preventDefault(); pointer=e.pointerId; canvas.setPointerCapture(pointer); move(e); });
-  function move(e) { if(e.pointerId!==pointer) return; e.preventDefault(); const box=canvas.getBoundingClientRect(); game.moveTo((e.clientX-box.left)*W/box.width); draw(); }
+  function move(e) { if(game.state!=='PLAYING'||e.pointerId!==pointer) return; e.preventDefault(); const box=canvas.getBoundingClientRect(); game.moveTo((e.clientX-box.left)*W/box.width); draw(); }
   canvas.addEventListener('pointermove',move);
-  for(const type of ['pointerup','pointercancel','lostpointercapture']) canvas.addEventListener(type,e=> { if(e.pointerId===pointer) pointer=null; });
+  for(const type of ['pointerup','pointercancel','lostpointercapture']) canvas.addEventListener(type,e=> { if(e.pointerId===pointer) clearPointer(); });
   document.addEventListener('keydown',e=> { if(game.state!=='PLAYING'||e.altKey||e.ctrlKey||e.metaKey||!['ArrowLeft','ArrowRight'].includes(e.code)) return; e.preventDefault(); keys.add(e.code); });
   document.addEventListener('keyup',e=>keys.delete(e.code));
   window.addEventListener('blur',pause); window.addEventListener('pagehide',pause);
-  document.addEventListener('visibilitychange',()=> { if(document.hidden) pause(); });
+  document.addEventListener('visibilitychange',()=> { if(document.hidden) pause(); sync(); });
+  window.addEventListener('pageshow',sync);
+  window.addEventListener('orientationchange',()=> { pause(); sync(); });
+  landscapeTouch.addEventListener('change',()=> { pause(); sync(); });
   function frame(now) {
+    // A suspended animation loop must return to PAUSE without advancing play.
+    if(last!==null&&now-last>1000) pause();
     const dt=last===null ? 0 : Math.min(.05,Math.max(0,(now-last)/1000)); last=now;
     game.update(dt,Number(keys.has('ArrowRight'))-Number(keys.has('ArrowLeft')));
     game.events.splice(0).forEach(tone); sync(); draw(); requestAnimationFrame(frame);

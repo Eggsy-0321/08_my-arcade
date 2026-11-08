@@ -14,7 +14,6 @@ a { color: #89eefd; text-decoration: none; }
 .arena { position: relative; width: min(100cqw, 56.25cqh); height: min(100cqh, 177.7778cqw); aspect-ratio: 9/16; outline: 1px solid #36567b; background: #000; }
 canvas { display: block; width: 100%; height: 100%; touch-action: none; image-rendering: pixelated; }
 .overlay { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #000d; padding: 8px; text-align: center; }
-.overlay.paused { background: #0009; }
 [hidden] { display: none !important; }
 h1 { color: #f9da59; font-size: clamp(22px, 7vw, 36px); line-height: 1.1; margin: 6px 0; text-shadow: 2px 2px #466b33; }
 .eyebrow { color: #88f397; font-size: 9px; letter-spacing: 1px; }
@@ -24,10 +23,17 @@ button, .button { display: grid; place-items: center; font: bold 12px 'Courier N
 button:hover, .button:hover { background: #223553; }
 button:disabled { opacity: .45; cursor: default; }
 button:focus-visible, a:focus-visible { outline: 2px solid #ff7dce; outline-offset: 2px; }
-#start, #retry, #resume { color: #080e20; background: #88f397; border-color: #88f397; }
+#start, #retry { color: #080e20; background: #88f397; border-color: #88f397; }
 #sound { margin: 7px 0; }
 #result-actions { display: grid; gap: 8px; }
 footer { justify-content: center; font-size: 9px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 650px) { .cabinet { gap: 4px; } .marquee { padding: 4px 0; } .eyebrow { display: none; } }
 @media (max-height: 470px) { header, footer, .marquee { display: none; } h1 { font-size: 16px; margin: 2px; } #hint, #message, .eyebrow { display: none; } .record { margin: 2px; } #sound { margin: 3px; } button, .button { font-size: 10px; padding: 0 6px; } }
+
+.pause-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, .pause-panel .button { min-width: 44px; min-height: 44px; }
+#resume { color: #080e20; background: #65efff; border-color: #65efff; }
+#pause-home { background: transparent; border-color: #426485; color: #b4c9de; }
