@@ -49,11 +49,74 @@ with sync_playwright() as p:
         else:
             page.keyboard.down('ArrowLeft');page.evaluate('tick(500)');page.keyboard.up('ArrowLeft');assert page.evaluate('g.ship')<100
             page.keyboard.down('ArrowRight');page.evaluate('tick(1500)');page.keyboard.up('ArrowRight');assert page.evaluate('g.ship')==344
+        # Freeze a live enemy, bullets, ship, score and all clocks together.
+        page.evaluate('g.fireClock=0;tick(510)');assert page.evaluate('g.snakes.length>0&&g.bullets.length>0')
+        page.locator('#pause').click();snapshot=page.evaluate('JSON.stringify(g)')
+        page.evaluate('tick(7000)');assert page.evaluate('JSON.stringify(g)')==snapshot
+        page.evaluate("document.getElementById('sound').click()")
+        assert page.locator('#sound').get_attribute('aria-pressed')=='true'
+        page.locator('#resume').click()
         page.evaluate('g.snakes=[];g.fireClock=0;tick(510)');assert page.evaluate('g.bullets.length')>0
         page.screenshot(path=f'/tmp/snake-playing-{mobile}.png')
         page.locator('#pause').click();snapshot=page.evaluate('JSON.stringify(g)');page.evaluate('tick(5000)');assert page.evaluate('JSON.stringify(g)')==snapshot
-        assert page.locator('#screen-title').inner_text()=='PAUSED'
-        page.locator('#resume').click();page.evaluate('tick(100)');assert page.evaluate('g.state')=='PLAYING'
+        assert page.locator('#pause-overlay').inner_text()=='PAUSED\nRESUME\nHOME'
+        assert page.locator('#overlay').is_hidden()
+        for w,h in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:
+            page.set_viewport_size({'width':w,'height':h})
+            panel=page.locator('.pause-panel').bounding_box();arena=page.locator('.arena').bounding_box()
+            assert abs(panel['x']+panel['width']/2-arena['x']-arena['width']/2)<1
+            assert abs(panel['y']+panel['height']/2-arena['y']-arena['height']/2)<1
+            assert panel['width']<=260 and panel['x']>=0 and panel['y']>=0 and panel['x']+panel['width']<=w and panel['y']+panel['height']<=h
+            for control in ['resume','pause-home']:
+                b=page.locator('#'+control).bounding_box();assert b['width']>=44 and b['height']>=44
+            assert page.evaluate("getComputedStyle(document.querySelector('.pause-overlay')).backgroundColor")=='rgba(0, 0, 0, 0.7)'
+        page.set_viewport_size({'width':390 if mobile else 1100,'height':844})
+        page.screenshot(path=f'/tmp/snake-paused-{mobile}.png')
+        before=page.evaluate('g.time')
+        page.locator('#resume').click();assert page.evaluate('g.state')=='PLAYING'
+        page.evaluate('tick(100)');assert abs(page.evaluate('g.time')-before-.09)<.0001
+        # Lifecycle events and an animation gap keep play stopped until manual resume.
+        for event in ['blur','pagehide','orientationchange','sleep']:
+            if event=='sleep':
+                page.evaluate('testNow+=5000;frames.splice(0).forEach(cb=>cb(testNow))')
+            else:
+                page.evaluate('(type)=>window.dispatchEvent(new Event(type))',event)
+            assert page.evaluate('g.state')=='PAUSED'
+            snapshot=page.evaluate('JSON.stringify(g)');page.evaluate('tick(2000)');assert page.evaluate('JSON.stringify(g)')==snapshot
+            page.evaluate("window.dispatchEvent(new Event('pageshow'))")
+            assert page.evaluate('g.state')=='PAUSED'
+            page.locator('#resume').click();assert page.evaluate('g.state')=='PLAYING'
+            page.evaluate('tick(10)')
+        if mobile:
+            # Native held touches cannot carry a drag across PAUSE/RESUME.
+            session=context.new_cdp_session(page)
+            box=page.locator('canvas').bounding_box();x=box['x']+box['width']*.3;y=box['y']+box['height']*.9
+            for ending in ['touchEnd','touchCancel','pause','blur']:
+                session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+                position=page.evaluate('g.ship')
+                if ending in ['pause','blur']:
+                    page.evaluate("document.getElementById('pause').click()" if ending=='pause' else "window.dispatchEvent(new Event('blur'))")
+                    page.evaluate("document.getElementById('resume').click()")
+                    session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+50,'y':y}]})
+                    assert page.evaluate('g.ship')==position
+                    session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+                else:
+                    session.send('Input.dispatchTouchEvent',{'type':ending,'touchPoints':[]})
+                    page.locator('canvas').dispatch_event('pointermove',{'pointerId':2,'clientX':x+100,'clientY':y})
+                    assert page.evaluate('g.ship')==position
+            session.detach()
+            page.set_viewport_size({'width':844,'height':390})
+            page.wait_for_function("g.state==='PAUSED'&&document.getElementById('resume').disabled",polling=50)
+            page.evaluate("document.getElementById('resume').dispatchEvent(new Event('click'))")
+            assert page.evaluate('g.state')=='PAUSED'
+            page.set_viewport_size({'width':390,'height':844})
+            page.wait_for_function("!document.getElementById('resume').disabled",polling=50)
+            assert page.evaluate('g.state')=='PAUSED'
+            page.locator('#resume').click()
+        else:
+            page.keyboard.down('ArrowLeft');page.locator('#pause').click();position=page.evaluate('g.ship')
+            page.locator('#resume').click();page.evaluate('tick(100)');assert page.evaluate('g.ship')==position
+            page.keyboard.up('ArrowLeft')
         page.evaluate('g.snakes=[SnakeInvaders.createSnake(()=>0)];g.bullets=[];g.hit({snake:g.snakes[0],index:1})')
         assert page.evaluate(f'localStorage.getItem("{KEY}")')=='10'
         page.evaluate('tick(10)');assert page.locator('#best').inner_text()=='10'
@@ -73,11 +136,15 @@ with sync_playwright() as p:
         page.evaluate('tick(300);g.events=[]')
         page.evaluate('''Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));''')
         assert page.evaluate('g.state')=='PAUSED';snapshot=page.evaluate('JSON.stringify(g)');page.evaluate('tick(1000)');assert page.evaluate('JSON.stringify(g)')==snapshot
-        page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false})')
+        assert page.locator('#resume').is_disabled()
+        page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false});document.dispatchEvent(new Event("visibilitychange"))')
+        assert page.evaluate('g.state')=='PAUSED'
         page.locator('#resume').click();page.evaluate('g.snakes[0].y=SnakeInvaders.LIMIT;tick(20)')
         page.locator('#home').click();page.wait_for_url(BASE+'index.html')
         launch_game(page, 'SNAKE INVADERS')
         assert page.locator('#best').inner_text()=='150' and page.locator('#sound').inner_text()=='SOUND OFF'
+        page.locator('#start').click();page.locator('#pause').click()
+        page.locator('#pause-home').click();page.wait_for_url(BASE+'index.html')
         assert not errors,errors
         context.close();print('PASS', 'Android touch' if mobile else 'PC keys','9:16 layout, start, firing, pause/resume, BEST, sound reset, retry/home, visibility',flush=True)
     for blocked in ["Object.defineProperty(window,'localStorage',{get(){throw Error('blocked')}})","Storage.prototype.setItem=function(){throw Error('blocked')}"]:
@@ -95,7 +162,7 @@ with sync_playwright() as p:
     # Observe Web Audio scheduling without adding production debug hooks.
     context=browser.new_context();page=context.new_page();page.route('**/snake-invaders/model.js',capture)
     page.goto(BASE+'games/snake-invaders/')
-    page.evaluate('''() => {window.frequencies=[];const original=AudioContext.prototype.createOscillator;
+    page.evaluate('''() => {window.frequencies=[];window.audioContexts=[];const BaseAudio=AudioContext;window.AudioContext=class extends BaseAudio{constructor(){super();audioContexts.push(this)}};const original=AudioContext.prototype.createOscillator;
     AudioContext.prototype.createOscillator=function(){const o=original.call(this),set=o.frequency.setValueAtTime.bind(o.frequency);o.frequency.setValueAtTime=(value,time)=>{frequencies.push(value);return set(value,time)};return o}}''')
     page.locator('#sound').click();page.locator('#start').click();page.wait_for_timeout(650)
     assert 650 in page.evaluate('frequencies')
@@ -105,4 +172,7 @@ with sync_playwright() as p:
     assert 880 in page.evaluate('frequencies')
     page.locator('#pause').click();page.wait_for_timeout(50);before=page.evaluate('frequencies.length');page.wait_for_timeout(350)
     assert page.evaluate('frequencies.length')==before
+    assert page.evaluate("audioContexts[0].state")=='suspended'
+    snapshot=page.evaluate('JSON.stringify(g)');page.wait_for_timeout(150);assert page.evaluate('JSON.stringify(g)')==snapshot
+    page.locator('#resume').click();page.wait_for_function("audioContexts[0].state==='running'")
     context.close();print('PASS three Web Audio effects and paused audio scheduling',flush=True);browser.close()
