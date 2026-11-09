@@ -78,11 +78,11 @@
   }
   function sync() {
     const state = game.state, playing = state === 'PLAYING', paused = state === 'PAUSED', clear = state === 'CLEAR', ended = clear || state === 'GAME OVER';
-    $('overlay').hidden = playing; $('start').hidden = state !== 'START';
-    $('resume').hidden = $('restart').hidden = !paused; $('retry').hidden = !ended;
-    $('home').hidden = !(ended || paused); $('results').hidden = !clear;
-    $('instructions').hidden = state !== 'START'; $('orientation').hidden = !paused || !portraitRequired();
-    $('resume').disabled = portraitRequired(); $('pause').disabled = !playing; $('fire').disabled = !playing;
+    $('overlay').hidden = playing || paused; $('pause-overlay').hidden = !paused; $('start').hidden = state !== 'START';
+    $('restart').hidden = !paused; $('retry').hidden = !ended;
+    $('home').hidden = !ended; $('results').hidden = !clear;
+    $('instructions').hidden = state !== 'START';
+    $('resume').disabled = document.hidden || portraitRequired(); $('pause').disabled = !playing; $('fire').disabled = !playing;
     $('screen-title').innerHTML = state === 'START' ? 'ALIEN<br>INVADERS' : state;
     $('sound').textContent = sound ? 'SOUND ON' : 'SOUND OFF'; $('sound').setAttribute('aria-pressed', String(sound));
     $('time').textContent = format(game.elapsed || 0);
@@ -103,6 +103,8 @@
   }
   function drainEvents() { for (const event of game.events || []) beep(event); if (game.events) game.events.length = 0; }
   function advance(now) {
+    // Sleep or a suspended frame loop must not advance gameplay or the record clock.
+    if (game.state === 'PLAYING' && now - last > 1000) { pause(false); last = now; return; }
     const before = game.state;
     game.update(Math.max(0, (now - last) / 1000)); last = now;
     if (before === 'PLAYING' && game.state !== 'PLAYING') finish();
@@ -113,13 +115,14 @@
     if (document.hidden || portraitRequired()) game.pause();
     sync(); $('pause').focus({ preventScroll: true });
   }
-  function pause() {
-    advance(performance.now());
+  function pause(advanceClock = true) {
+    if (game.state !== 'PLAYING') return;
+    if (advanceClock) advance(performance.now());
     if (!game.pause()) return;
     cancelInput(); silence(); sync(); $('resume').focus({ preventScroll: true });
   }
   $('start').addEventListener('click', start); $('retry').addEventListener('click', start); $('restart').addEventListener('click', start);
-  $('pause').addEventListener('click', pause);
+  $('pause').addEventListener('click', () => pause());
   $('resume').addEventListener('click', () => {
     if (document.hidden || portraitRequired() || !game.resume()) return;
     cancelInput(); last = performance.now(); unlockAudio(); sync(); $('pause').focus({ preventScroll: true });
@@ -169,10 +172,14 @@
     if (['PLAYING', 'PAUSED'].includes(game.state)) event.preventDefault();
     advance(performance.now()); keys.delete(event.code); input();
   });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
-  window.addEventListener('blur', pause); window.addEventListener('pagehide', pause);
+  for (const link of document.querySelectorAll('a[href="../../index.html"]')) link.addEventListener('click', () => { pause(); cancelInput(); silence(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); sync(); });
+  window.addEventListener('blur', () => pause()); window.addEventListener('pagehide', () => pause());
+  window.addEventListener('pageshow', sync);
   function resize() { if (portraitRequired()) pause(); sync(); }
-  window.addEventListener('resize', resize); window.addEventListener('orientationchange', resize);
+  window.addEventListener('resize', resize);
+  window.addEventListener('orientationchange', () => { pause(); sync(); });
+  matchMedia('(orientation: landscape) and (pointer: coarse)').addEventListener('change', () => { pause(); sync(); });
   function frame(now) { advance(now); if (game.state === 'PLAYING') sync(); requestAnimationFrame(frame); }
   sync(); requestAnimationFrame(frame);
 })();

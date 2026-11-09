@@ -11,7 +11,7 @@
 </head>
 <body>
   <main class="cabinet" aria-label="ALIEN INVADERS">
-    <header><a href="../../index.html">← MY ARCADE</a><button id="sound" type="button" aria-pressed="true">SOUND ON</button></header>
+    <header><a href="../../index.html">← MY ARCADE</a><button id="restart" type="button" hidden>RESTART</button><button id="sound" type="button" aria-pressed="true">SOUND ON</button></header>
     <div class="hud">
       <div id="lives" aria-label="ライフ3"></div>
       <div class="clock"><span>TIME</span><output id="time">0.00s</output></div>
@@ -24,17 +24,21 @@
           <p class="eyebrow">MY ARCADE · 07</p>
           <h1 id="screen-title">ALIEN<br>INVADERS</h1>
           <p id="instructions">20体を全滅させて最速クリア！<br>スティックで左右移動・赤ボタンで射撃<br>PC：← → / Space（長押し連射）<br>ライフ3・被弾1回につき記録に＋3秒</p>
-          <p id="orientation" hidden>縦画面に戻してRESUME</p>
           <div id="results" hidden>
             <dl><div><dt>実測タイム</dt><dd id="raw-time"></dd></div><div><dt>ペナルティ</dt><dd id="penalty"></dd></div><div class="total"><dt>最終記録</dt><dd id="final-time"></dd></div><div><dt>BEST</dt><dd id="best"></dd></div></dl>
             <p id="new-best" hidden>NEW BEST!</p>
           </div>
           <button id="start" type="button">START</button>
-          <button id="resume" type="button" hidden>RESUME</button>
-          <button id="restart" type="button" hidden>RESTART</button>
           <button id="retry" type="button" hidden>RETRY</button>
           <a id="home" href="../../index.html" hidden>HOME — MY ARCADEへ戻る</a>
         </div>
+      </div>
+      <div id="pause-overlay" class="pause-overlay" hidden>
+        <section class="pause-panel" aria-labelledby="pause-title">
+          <h2 id="pause-title">PAUSED</h2>
+          <button id="resume" type="button">RESUME</button>
+          <a id="pause-home" href="../../index.html">HOME</a>
+        </section>
       </div>
     </section>
     <section class="controls" aria-label="操作パネル">
