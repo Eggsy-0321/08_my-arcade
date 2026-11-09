@@ -60,7 +60,22 @@ with sync_playwright() as p:
             touches('touchCancel',[]); assert not page.evaluate('g.firing')
             assert page.locator('#knob').evaluate('n=>n.style.transform') == ''
             touches('touchStart',[(sx+40,sy,1),(fx,fy,2)]); page.locator('#pause').click()
-            touches('touchEnd',[]); session.detach()
+            assert page.evaluate('g.direction') == 0 and not page.evaluate('g.firing')
+            assert not page.locator('#fire').evaluate('n=>n.classList.contains("pressed")')
+            page.locator('#resume').click()
+            touches('touchMove',[(sx-40,sy,1),(fx+2,fy,2)])
+            assert page.evaluate('g.direction') == 0 and not page.evaluate('g.firing')
+            page.evaluate('tick(100)'); assert not page.evaluate('g.firing')
+            page.locator('#pause').click()
+            touches('touchEnd',[])
+            page.locator('#resume').click()
+            # Fresh pointers work after releasing the stale fingers.
+            touches('touchStart',[(sx-40,sy,3),(fx,fy,4)])
+            assert page.evaluate('g.direction') == -1 and page.evaluate('g.firing')
+            ship=page.evaluate('g.ship');page.evaluate('tick(350)');assert page.evaluate('g.ship')<ship
+            touches('touchEnd',[])
+            assert page.evaluate('g.direction') == 0 and not page.evaluate('g.firing')
+            page.locator('#pause').click();session.detach()
         else:
             page.keyboard.down('ArrowRight');page.keyboard.down('Space')
             assert page.evaluate('g.lasers.length') == 1
@@ -68,11 +83,22 @@ with sync_playwright() as p:
             page.evaluate('tick(1)');assert page.evaluate('g.lasers.length') == 2
             assert page.evaluate('g.ship') > 180
             assert page.evaluate('scrollY') == 0
-            page.locator('#pause').click();page.keyboard.up('Space');page.keyboard.up('ArrowRight')
+            page.locator('#pause').click()
+            page.locator('#resume').click()
+            page.keyboard.down('ArrowRight');page.keyboard.down('Space')  # Native repeats from held keys.
+            assert page.evaluate('g.direction') == 0 and not page.evaluate('g.firing')
+            page.keyboard.up('Space');page.keyboard.up('ArrowRight');page.locator('#pause').click()
         assert page.evaluate('g.state') == 'PAUSED'
+        assert page.locator('#pause-overlay').inner_text().split() == ['PAUSED','RESUME','HOME']
+        assert page.locator('#overlay').is_hidden()
+        assert page.locator('#restart').is_visible()
+        assert page.locator('#restart').evaluate('n=>!n.closest("#pause-overlay")')
+        snapshot=page.evaluate('JSON.stringify(g)')
         before=page.evaluate('g.elapsed'); page.evaluate('tick(9000)');assert page.evaluate('g.elapsed') == before
+        assert page.evaluate('JSON.stringify(g)') == snapshot
         assert page.evaluate('g.direction') == 0 and not page.evaluate('g.firing')
-        page.locator('#resume').click();page.evaluate('tick(100)');assert abs(page.evaluate('g.elapsed')-before-.1)<1e-6
+        page.locator('#resume').click();assert page.evaluate('g.state') == 'PLAYING'
+        page.evaluate('tick(100)');assert abs(page.evaluate('g.elapsed')-before-.1)<1e-6
         assert not page.evaluate('g.firing')
         page.evaluate('g.lasers=Array.from({length:3},()=>({x:1,y:400}));g.cooldown=0')
         page.keyboard.down('Space');page.evaluate('tick(350)');page.keyboard.up('Space')
@@ -85,11 +111,18 @@ with sync_playwright() as p:
         assert page.evaluate('g.state') == 'PAUSED'
         page.locator('#resume').click();page.evaluate("dispatchEvent(new Event('blur'))")
         assert page.evaluate('g.state') == 'PAUSED'
+        page.locator('#resume').click();page.evaluate("dispatchEvent(new Event('orientationchange'))")
+        assert page.evaluate('g.state') == 'PAUSED'
+        page.locator('#resume').click();snapshot=page.evaluate('g.elapsed')
+        page.evaluate('tick(9000)');assert page.evaluate('g.state') == 'PAUSED'
+        assert page.evaluate('g.elapsed') == snapshot
+        page.evaluate('tick(100)');assert page.evaluate('g.state') == 'PAUSED'
         page.locator('#restart').click();assert page.evaluate('g.elapsed') == 0
         assert page.evaluate('g.bullets.length') == 0 and page.evaluate('g.lives') == 3
         if mobile:
             page.set_viewport_size({'width':844,'height':390});page.wait_for_timeout(100)
             assert page.evaluate('g.state') == 'PAUSED'; assert page.locator('#resume').is_disabled()
+            page.evaluate('document.getElementById("resume").click()');assert page.evaluate('g.state') == 'PAUSED'
             page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100)
             assert page.evaluate('g.state') == 'PAUSED';page.locator('#resume').click()
         # Fail at the defense line; this must never save a BEST or display extra stats.
@@ -125,10 +158,21 @@ with sync_playwright() as p:
             for name in ['stick','fire']:
                 box=page.locator('#'+name).bounding_box();assert box['y']+box['height'] <= height and box['width']>=76
             box=page.locator('canvas').bounding_box();assert abs(box['width']/box['height']-.75)<.01
+            if page.evaluate('g.state') == 'PLAYING': page.locator('#pause').click()
+            panel=page.locator('.pause-panel').bounding_box(); field=page.locator('.playfield').bounding_box()
+            assert panel['x']>=field['x'] and panel['x']+panel['width']<=field['x']+field['width']
+            assert panel['y']>=field['y'] and panel['y']+panel['height']<=field['y']+field['height']
+            assert abs(panel['x']+panel['width']/2-field['x']-field['width']/2)<1
+            assert abs(panel['y']+panel['height']/2-field['y']-field['height']/2)<1
+            for selector in ['#resume','#pause-home','#restart']:
+                box=page.locator(selector).bounding_box();assert box['width']>=44 and box['height']>=44
+            assert page.locator('.pause-overlay').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgba(0, 0, 0, 0.7)'
+            assert page.locator('.pause-panel').evaluate('n=>getComputedStyle(n).animationName') == 'none'
+            page.screenshot(path=f'/tmp/alien-invaders-pause-{mobile}-{width}.png')
         page.set_viewport_size({'width':390 if mobile else 1100,'height':844});page.wait_for_timeout(60)
         page.screenshot(path=f'/tmp/alien-invaders-play-{mobile}.png')
         if page.evaluate('g.state') == 'PAUSED': page.locator('#resume').click()
-        page.locator('#pause').click();page.locator('#home').click();page.wait_for_url(BASE+'index.html')
+        page.locator('#pause').click();page.locator('#pause-home').click();page.wait_for_url(BASE+'index.html')
         assert not errors, errors
         context.close();print('PASS:', 'Android multitouch' if mobile else 'PC keyboard', 'shooting, pause, visibility, blur, orientation, restart, results, best, reload, layouts, home',flush=True)
     # Storage/audio failures must preserve play and session records.
@@ -155,6 +199,11 @@ with sync_playwright() as p:
     assert page.evaluate('tones')>=2
     page.evaluate('''() => {g.events.push('destroy','hit','clear')}''');page.wait_for_timeout(80)
     assert page.evaluate('tones')>=7
+    page.keyboard.down('Space');page.locator('#pause').click();page.keyboard.up('Space')
+    before=page.evaluate('JSON.stringify(g)');tones=page.evaluate('tones')
+    page.wait_for_timeout(400)
+    assert page.evaluate('JSON.stringify(g)')==before and page.evaluate('tones')==tones
+    page.locator('#resume').click();assert page.evaluate('g.state')=='PLAYING'
     page.locator('#sound').click();tones=page.evaluate('tones');page.keyboard.press('Space');page.wait_for_timeout(400);assert page.evaluate('tones')==tones
     page.screenshot(path='/tmp/alien-invaders-real.png');context.close();browser.close()
     print('PASS: real animation frames and four Web Audio effects, sound OFF',flush=True)

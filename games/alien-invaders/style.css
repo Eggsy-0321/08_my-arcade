@@ -41,3 +41,11 @@ dd { margin: 0; font-variant-numeric: tabular-nums; }
 #fire.pressed { transform: translateY(4px); box-shadow: 0 2px 0 #670b21; }
 @media (max-height: 650px) { .eyebrow { display: none; } .screen { padding: 5px; } #instructions { line-height: 1.5; margin: 5px 0; } h1 { margin: 4px 0; font-size: 20px; } dl { font-size: 10px; margin: 4px auto; } dl div { padding: 2px; } .screen button, #home { margin-top: 4px; } }
 @media (orientation: landscape) and (pointer: coarse) { .playfield { width: min(100%, 230px); } }
+
+#restart { font-size: 11px; padding: 4px 8px; }
+.pause-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, .pause-panel a { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+#resume { color: #080e20; background: #65efff; border-color: #65efff; }
+#pause-home { background: transparent; border: 2px solid #426485; color: #b4c9de; font-weight: bold; }
