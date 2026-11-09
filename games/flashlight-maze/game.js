@@ -7,6 +7,8 @@
   const save = (key, value) => { try { localStorage.setItem(prefix + key, String(value)); } catch { /* Keep session records. */ } };
   const game = new Game(), buttons = [...document.querySelectorAll('[data-direction]')];
   let best = record(read('best')), sound = read('sound') !== 'off', audio, owner = null, lastFrame = performance.now();
+  const voices = new Set();
+  function portraitRequired() { return matchMedia('(pointer: coarse)').matches && innerWidth > innerHeight; }
   function unlock() {
     if (!sound) return;
     try {
@@ -16,14 +18,18 @@
       if (audio.state === 'suspended') audio.resume()?.catch(() => {});
     } catch { /* Audio is optional. */ }
   }
+  function silence() {
+    for (const voice of voices) { try { voice.stop(); } catch { /* Already ended. */ } }
+    voices.clear();
+  }
   function beep(clear) {
-    if (!sound || audio?.state !== 'running') return;
+    if (!sound || game.state === 'PAUSED' || audio?.state !== 'running') return;
     try {
       (clear ? [523, 659, 784] : [330]).forEach((hz, i) => {
         const o = audio.createOscillator(), gain = audio.createGain(), at = audio.currentTime + i * .08;
         o.type = 'sine'; o.frequency.value = hz; gain.gain.setValueAtTime(.0001, at);
         gain.gain.exponentialRampToValueAtTime(.045, at + .008); gain.gain.exponentialRampToValueAtTime(.0001, at + .07);
-        o.connect(gain); gain.connect(audio.destination); o.onended = () => { o.disconnect(); gain.disconnect(); };
+        o.connect(gain); gain.connect(audio.destination); voices.add(o); o.onended = () => { voices.delete(o); o.disconnect(); gain.disconnect(); };
         o.start(at); o.stop(at + .08);
       });
     } catch { /* Effects must never interrupt play. */ }
@@ -69,16 +75,15 @@
   }
   function sync() {
     const state = game.state, active = ['MEMORY', 'ESCAPE'].includes(state);
-    const clear = state === 'CLEAR';
+    const clear = state === 'CLEAR', paused = state === 'PAUSED';
     (clear ? $('result-slot') : document.querySelector('.arena')).append($('overlay'));
     $('result-slot').hidden = !clear;
     document.querySelector('.actions').hidden = document.querySelector('.dpad').hidden = clear;
-    $('overlay').hidden = active; $('overlay').classList.toggle('clear', state === 'CLEAR');
-    $('screen-title').innerHTML = state === 'TITLE' ? 'FLASHLIGHT<br>MAZE' : state === 'PAUSED' ? 'PAUSED' : 'CLEAR!';
+    $('overlay').hidden = active || paused; $('pause-overlay').hidden = !paused; $('overlay').classList.toggle('clear', state === 'CLEAR');
+    $('screen-title').innerHTML = state === 'TITLE' ? 'FLASHLIGHT<br>MAZE' : 'CLEAR!';
     $('message').hidden = state === 'CLEAR';
-    if (state === 'PAUSED') $('message').textContent = '迷路と時計を停止中。RESUMEで再開';
-    $('start').hidden = state !== 'TITLE'; $('resume').hidden = state !== 'PAUSED';
-    $('retry').hidden = $('results').hidden = state !== 'CLEAR'; $('home').hidden = !['PAUSED', 'CLEAR'].includes(state);
+    $('start').hidden = state !== 'TITLE'; $('resume').disabled = document.hidden || portraitRequired();
+    $('retry').hidden = $('results').hidden = state !== 'CLEAR'; $('home').hidden = !clear;
     $('pause').disabled = !active; $('restart').disabled = state === 'TITLE';
     buttons.forEach(b => { b.disabled = state !== 'ESCAPE'; });
     $('best').textContent = best === null ? '--:--.--' : format(best);
@@ -91,11 +96,11 @@
     $('time').textContent = memory ? String(Math.ceil(game.memory / 1000)) : format(game.elapsed);
   }
   function start() { clearInput(); unlock(); game.start(); lastFrame = performance.now(); sync(); $('pause').focus({ preventScroll: true }); $('status').textContent = '10秒間、迷路を記憶してください。'; }
-  function pause(at = performance.now()) { clearInput(); if (at - lastFrame > C.sleepGap) at = lastFrame; if (game.pause(at)) { sync(); $('resume').focus({ preventScroll: true }); } }
+  function pause(at = performance.now()) { clearInput(); if (at - lastFrame > C.sleepGap) at = lastFrame; if (game.pause(at)) { silence(); sync(); $('resume').focus({ preventScroll: true }); } }
   $('start').addEventListener('click', start); $('retry').addEventListener('click', start); $('restart').addEventListener('click', start);
   $('pause').addEventListener('click', () => pause());
   $('resume').addEventListener('click', () => {
-    if (document.hidden || !game.resume()) return;
+    if (document.hidden || portraitRequired() || !game.resume()) return;
     clearInput(); unlock(); lastFrame = performance.now(); sync(); $('pause').focus({ preventScroll: true });
   });
   $('sound').addEventListener('click', () => { sound = !sound; save('sound', sound ? 'on' : 'off'); unlock(); sync(); });
@@ -128,11 +133,14 @@
     e.preventDefault(); if (!e.repeat) press(direction, e.code);
   });
   window.addEventListener('keyup', e => { if (owner === e.code) clearInput(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  for (const link of document.querySelectorAll('a[href="../../index.html"]')) link.addEventListener('click', () => { pause(); clearInput(); silence(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); sync(); });
   window.addEventListener('blur', () => pause()); window.addEventListener('pagehide', () => pause());
-  window.addEventListener('orientationchange', () => pause());
-  screen.orientation?.addEventListener('change', () => pause());
-  const orientation = matchMedia('(orientation: portrait)'); orientation.addEventListener('change', () => pause());
+  window.addEventListener('pageshow', sync);
+  window.addEventListener('resize', () => { if (portraitRequired()) pause(); sync(); });
+  window.addEventListener('orientationchange', () => { pause(); sync(); });
+  screen.orientation?.addEventListener('change', () => { pause(); sync(); });
+  const orientation = matchMedia('(orientation: portrait)'); orientation.addEventListener('change', () => { pause(); sync(); });
   function frame(at) {
     if (at - lastFrame > C.sleepGap) pause(lastFrame);
     lastFrame = at;

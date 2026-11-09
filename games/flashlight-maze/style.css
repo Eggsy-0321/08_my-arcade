@@ -11,7 +11,7 @@ h1 { font-size: clamp(15px, 4.6vw, 21px); color: #71efff; margin: 4px 0 8px; pad
 #overlay.clear { background: #080e20e8; inset: 12% 6%; border: 1px solid #ff85d1; }
 [hidden] { display: none !important; }.eyebrow { font-size: 10px; color: #71efff; margin: 0; }h2 { font-size: clamp(21px, 6vw, 30px); margin: 2px 0; text-shadow: 2px 2px #943cb5; }
 #message { font: 12px/1.65 sans-serif; margin: 3px 0; }#results { font-size: 12px; }#results p { margin: 4px 0; }#results strong { color: #71efff; }
-#start, #retry { background: #71efff; color: #080e20; min-width: 140px; }#resume { min-width: 140px; }#home { padding: 0 8px; }
+#start, #retry { background: #71efff; color: #080e20; min-width: 140px; }#home { padding: 0 8px; }
 .actions { margin: 8px 0; }.actions button { flex: 1; }
 .dpad { display: grid; grid-template: repeat(3, var(--pad)) / repeat(3, var(--pad)); gap: 3px; justify-content: center; user-select: none; }
 .dpad button { padding: 0; font-size: 21px; touch-action: none; }.dpad button.pressed { color: #080e20; background: #71efff; }.dpad span { grid-area: 2 / 2; display: grid; place-items: center; color: #65728b; }
@@ -22,3 +22,10 @@ h1 { font-size: clamp(15px, 4.6vw, 21px); color: #71efff; margin: 4px 0 8px; pad
 
 #result-slot #overlay.clear { position: static; background: #080e20; border: 1px solid #ff85d1; margin-top: 6px; padding: 6px; gap: 2px; }
 #result-slot .eyebrow { display: none; }
+
+.pause-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, .pause-panel a { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; }
+#resume { color: #080e20; background: #65efff; border-color: #65efff; }
+#pause-home { background: transparent; border: 2px solid #426485; border-radius: 4px; color: #b4c9de; font-weight: bold; }
