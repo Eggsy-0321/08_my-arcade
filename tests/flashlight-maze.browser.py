@@ -22,6 +22,26 @@ SOLVE = """() => {
   document.getElementById(d).click();
  }
 }"""
+def check_pause(page):
+    assert page.locator('#pause-overlay').is_visible()
+    assert page.locator('#overlay').is_hidden()
+    assert page.locator('.pause-panel').inner_text().split()==['PAUSED','RESUME','HOME']
+    assert page.locator('.pause-panel button, .pause-panel a').count()==2
+    assert page.locator('#restart').is_visible() and page.locator('#restart').is_enabled()
+    assert page.locator('.pause-panel #restart').count()==0
+    assert page.locator('#pause').bounding_box()['y']+page.locator('#pause').bounding_box()['height']<=page.locator('.arena').bounding_box()['y']
+    assert page.evaluate("Array.from(document.querySelector('canvas').getContext('2d').getImageData(0,0,520,520).data).filter((_,i)=>i%4!==3).every(v=>v===0)")
+    arena=page.locator('.arena').bounding_box();panel=page.locator('.pause-panel').bounding_box()
+    assert panel['width']<=260 and panel['x']>=arena['x'] and panel['y']>=arena['y']
+    assert panel['x']+panel['width']<=arena['x']+arena['width'] and panel['y']+panel['height']<=arena['y']+arena['height']
+    assert abs(panel['x']+panel['width']/2-arena['x']-arena['width']/2)<1
+    assert abs(panel['y']+panel['height']/2-arena['y']-arena['height']/2)<1
+    for selector in ['#resume','#pause-home']:
+        box=page.locator(selector).bounding_box();assert box['width']>=44 and box['height']>=44
+    assert page.evaluate("getComputedStyle(document.querySelector('#pause-overlay')).backgroundColor")=='rgba(0, 0, 0, 0.7)'
+    assert page.evaluate("Array.from(document.querySelectorAll('#pause-overlay, #pause-overlay *')).every(e=>{const s=getComputedStyle(e);return s.animationName==='none' && s.transitionDuration==='0s'})")
+    assert page.evaluate('document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight')
+
 with sync_playwright() as p:
     browser=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/chromium'),args=['--no-sandbox'])
     for mobile in [False,True]:
@@ -43,9 +63,17 @@ with sync_playwright() as p:
         page.keyboard.press('ArrowDown');assert page.evaluate('g.player.y')==1
         assert page.locator('#down').is_disabled()
         page.evaluate('advance(3000)');page.locator('#pause').click();assert page.evaluate('g.memory')==7000
+        check_pause(page)
+        for width,height in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:
+            page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(60)
+            check_pause(page)
+            page.screenshot(path=f'/tmp/flashlight-pause-{mobile}-{width}.png')
+        page.set_viewport_size({'width':390 if mobile else 1100,'height':844});page.wait_for_timeout(60)
         assert page.evaluate("Array.from(document.querySelector('canvas').getContext('2d').getImageData(0,0,520,520).data).filter((_,i)=>i%4!==3).every(v=>v===0)")
         page.evaluate('advance(9000)');assert page.evaluate('g.memory')==7000
-        page.locator('#resume').click();page.evaluate('advance(6999)');assert page.evaluate('g.state')=='MEMORY'
+        page.locator('#resume').click();assert page.evaluate('g.state')=='MEMORY'
+        assert page.evaluate('g.memory')==7000
+        page.evaluate('advance(6999)');assert page.evaluate('g.state')=='MEMORY'
         page.evaluate('tick(1)');assert page.evaluate('g.state')=='ESCAPE';assert page.locator('#time').inner_text()=='00:00.00'
         assert not page.locator('#down').is_disabled()
         # Raster output: fully black outside circle; near wall remains visible; goal hidden.
@@ -78,18 +106,38 @@ with sync_playwright() as p:
             touch('touchStart',[{'x':x,'y':y,'id':1}]);touch('touchMove',[{'x':1,'y':1,'id':1}])
             pos=page.evaluate('JSON.stringify(g.player)');page.evaluate('advance(500)');assert page.evaluate('JSON.stringify(g.player)')==pos
             touch('touchEnd',[]);session.detach()
+        # A finger held across PAUSE must never start moving again on RESUME.
+        if mobile:
+            session=context.new_cdp_session(page)
+            box=page.locator('#'+direction).bounding_box();x,y=box['x']+box['width']/2,box['y']+box['height']/2
+            page.evaluate('g.player={x:1,y:1}')
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y,'id':1}]})
+            page.evaluate("document.getElementById('pause').click()")
+            check_pause(page)
+            pos=page.evaluate('JSON.stringify(g.player)')
+            page.evaluate("document.getElementById('resume').click()")
+            session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+1,'y':y,'id':1}]})
+            page.evaluate('advance(600)');assert page.evaluate('JSON.stringify(g.player)')==pos
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});session.detach()
+            assert page.locator('.dpad .pressed').count()==0
         # WASD, walls, pause clears held state.
         page.evaluate('g.player={x:1,y:1}');page.keyboard.press('w');page.keyboard.press('a');assert page.evaluate('g.player.x+g.player.y')==2
         page.keyboard.down({'right':'d','down':'s'}[direction]);page.locator('#pause').click()
-        page.keyboard.up({'right':'d','down':'s'}[direction]);before=page.evaluate('g.elapsed');pos=page.evaluate('JSON.stringify(g.player)')
+        before=page.evaluate('g.elapsed');pos=page.evaluate('JSON.stringify(g.player)')
         page.evaluate('advance(7000)');assert page.evaluate('g.elapsed')==before
         page.locator('#resume').click();page.evaluate('tick(250)');assert page.evaluate('g.elapsed')==before+250
+        page.keyboard.down({'right':'d','down':'s'}[direction]);page.evaluate('advance(500)')
         assert page.evaluate('JSON.stringify(g.player)')==pos
+        assert page.locator('.dpad .pressed').count()==0
+        page.keyboard.up({'right':'d','down':'s'}[direction])
         for event in ['visibilitychange','blur','pagehide','orientationchange']:
             if event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))")
             else:page.evaluate('(e)=>dispatchEvent(new Event(e))',event)
             assert page.evaluate('g.state')=='PAUSED',event
             page.evaluate('advance(3000)')
+            if event=='visibilitychange':
+                assert page.locator('#resume').is_disabled()
+                page.evaluate("document.getElementById('resume').click()");assert page.evaluate('g.state')=='PAUSED'
             if event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'))")
             assert page.evaluate('g.state')=='PAUSED';page.locator('#resume').click()
         # Missing frames after sleep pauses at the last rendered instant.
@@ -98,6 +146,9 @@ with sync_playwright() as p:
         page.locator('#restart').click();assert page.evaluate('g.state')=='MEMORY';assert page.evaluate('g.elapsed')==0
         assert page.evaluate('JSON.stringify(g.board)')!=initial
         page.set_viewport_size({'width':844,'height':390});page.wait_for_timeout(80);assert page.evaluate('g.state')=='PAUSED'
+        if mobile:
+            assert page.locator('#resume').is_disabled()
+            page.evaluate("document.getElementById('resume').click()");assert page.evaluate('g.state')=='PAUSED'
         page.set_viewport_size({'width':390 if mobile else 1100,'height':844});page.wait_for_timeout(80);assert page.evaluate('g.state')=='PAUSED'
         page.locator('#resume').click();page.evaluate('advance(10000)');page.evaluate('advance(1234)');page.evaluate(SOLVE)
         assert page.evaluate('g.state')=='CLEAR';assert page.locator('#final-time').inner_text()=='00:01.23'
@@ -126,9 +177,28 @@ with sync_playwright() as p:
                 box=page.locator('#'+d).bounding_box();assert box['width']>=44 and box['height']>=44 and box['y']+box['height']<=height
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60)
         page.locator('#resume').click();page.evaluate('advance(10000)');page.screenshot(path=f'/tmp/flashlight-escape-{mobile}.png')
-        page.locator('#pause').click();page.locator('#home').click();page.wait_for_url(BASE+'index.html')
+        page.locator('#pause').click();page.locator('#pause-home').click();page.wait_for_url(BASE+'index.html')
         assert not errors,errors;context.close()
-        print('PASS:', 'Android touch' if mobile else 'PC keyboard', 'title→CLEAR, memory, holds/cancel, rendering, pause/sleep/rotation, clocks, best, retry/home, layouts',flush=True)
+        print('PASS:', 'Chromium touch emulation' if mobile else 'PC keyboard', 'title→CLEAR, memory, holds/cancel, rendering, pause/sleep/rotation, clocks, best, retry/home, layouts',flush=True)
+    # Auto-pause also preserves MEMORY, including a nearly completed countdown.
+    context=browser.new_context(viewport={'width':390,'height':844},is_mobile=True,has_touch=True)
+    context.add_init_script(CLOCK);page=context.new_page();page.goto(BASE+'games/flashlight-maze/');page.evaluate(OBSERVE)
+    page.locator('#start').click();page.evaluate('advance(9999)')
+    for event in ['blur','pagehide','orientationchange','visibilitychange','sleep']:
+        if event=='sleep':page.evaluate('tick(5000)')
+        elif event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))")
+        else:page.evaluate('(e)=>dispatchEvent(new Event(e))',event)
+        assert page.evaluate("g.state==='PAUSED' && g.phase==='MEMORY' && g.memory===1 && g.elapsed===0")
+        page.evaluate('advance(5000)');assert page.evaluate('g.memory')==1
+        if event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'))")
+        assert page.evaluate('g.state')=='PAUSED';page.locator('#resume').click()
+        assert page.evaluate("g.state==='MEMORY' && g.memory===1")
+    page.evaluate('tick(1)');assert page.evaluate("g.state==='ESCAPE' && g.elapsed===0")
+    page.locator('#pause').click();page.locator('#restart').click()
+    assert page.evaluate("g.state==='MEMORY' && g.memory===10000 && g.elapsed===0 && g.player.x===1 && g.player.y===1")
+    page.locator('#pause').click();page.locator('#restart').click()
+    assert page.evaluate("g.state==='MEMORY' && g.memory===10000")
+    context.close();print('PASS: MEMORY auto-pause at 1ms remaining and RESTART from both paused phases',flush=True)
     for failure in ['get','set','invalid','audio-missing','audio-throws','audio-rejects']:
         context=browser.new_context();context.add_init_script(CLOCK)
         if failure in ['get','set']:context.add_init_script(f'Storage.prototype.{failure}Item=function(){{throw Error("blocked")}}')
@@ -143,9 +213,14 @@ with sync_playwright() as p:
             assert page.locator('#final-best').inner_text()=='00:01.00'
         assert not errors,errors;context.close();print('PASS:',failure,flush=True)
     context=browser.new_context(viewport={'width':390,'height':844});page=context.new_page();page.goto(BASE+'games/flashlight-maze/');page.evaluate(OBSERVE)
-    page.evaluate("() => {window.tones=0;const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;return make.call(this)}}")
+    page.evaluate("() => {window.tones=0;window.stopped=0;const stop=OscillatorNode.prototype.stop;OscillatorNode.prototype.stop=function(at){if(at===undefined)stopped++;return stop.call(this,at)};const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;return make.call(this)}}")
     page.locator('#start').click();page.wait_for_timeout(10100);assert page.evaluate('g.state')=='ESCAPE'
-    direction=page.evaluate(NEXT);page.locator('#'+direction).click();assert page.evaluate('tones')>=1
+    direction=page.evaluate(NEXT)
+    page.evaluate("d=>{document.getElementById(d).click();document.getElementById('pause').click()}",direction)
+    assert page.evaluate('tones>=1 && stopped>=1')
+    tones=page.evaluate('tones');page.wait_for_timeout(150);assert page.evaluate('tones')==tones
+    page.locator('#sound').click();page.locator('#sound').click();assert page.evaluate('tones')==tones
+    page.locator('#resume').click();assert page.evaluate('g.state')=='ESCAPE'
     page.evaluate('g.player={x:1,y:1}');page.evaluate(SOLVE);assert page.evaluate('g.state')=='CLEAR';assert page.evaluate('tones')>=4
     assert page.evaluate('g.elapsed')>0;page.screenshot(path='/tmp/flashlight-real.png');context.close();browser.close()
     print('PASS: real 10-second transition, animation frames and Web Audio',flush=True)
