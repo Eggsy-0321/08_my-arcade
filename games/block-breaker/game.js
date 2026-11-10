@@ -12,6 +12,13 @@
   let muted = read('my-arcade:block-breaker:muted') === 'true';
   let audio, particles = [], trail = [], feedbackUntil = 0, lastState, previousTime = performance.now();
   const keys = new Set();
+  let drag = null, pauseTime = null;
+  const portraitRequired = () => matchMedia('(pointer: coarse)').matches && innerWidth > innerHeight;
+  function clearInput() {
+    keys.clear();
+    const id = drag?.id; drag = null;
+    if (id !== undefined && canvas.hasPointerCapture(id)) canvas.releasePointerCapture(id);
+  }
   const format = ms => {
     const cs = Math.floor(ms / 10);
     return `${String(Math.floor(cs / 6000)).padStart(2, '0')}:${String(Math.floor(cs / 100) % 60).padStart(2, '0')}.${String(cs % 100).padStart(2, '0')}`;
@@ -33,7 +40,7 @@
     osc.connect(gain); gain.connect(audio.destination); osc.start(now); osc.stop(now + length);
   }
   function feedback(text, duration = 1100) { $('feedback').textContent = text; feedbackUntil = performance.now() + duration; }
-  const game = new Game({ event(type, value) {
+  const game = new Game({ now: () => pauseTime ?? performance.now(), event(type, value) {
     sound(type);
     if (type === 'brick') {
       for (let i = 0; i < 6; i++) particles.push({ x: value.x + value.w / 2, y: value.y + value.h / 2,
@@ -43,28 +50,35 @@
     if (type === 'miss') { trail = []; feedback('+10.00 SEC — 発射して再開', 2500); }
     if (type === 'clear' && (best === null || value < best)) { best = value; save('my-arcade:block-breaker:v1.1:best', best); }
   } });
-  function reset() { unlock(); keys.clear(); particles = []; trail = []; game.reset(); feedback('READY — 発射してスタート', Infinity); sync(); canvas.focus({ preventScroll: true }); }
+  function reset() { unlock(); clearInput(); particles = []; trail = []; game.reset(); previousTime = performance.now(); feedback('READY — 発射してスタート', Infinity); sync(); canvas.focus({ preventScroll: true }); }
   function launch() { unlock(); if (game.state === 'READY') { game.launch(); feedback('', 0); sync(); } }
   function pause() {
-    unlock(); keys.clear();
-    if (game.state === 'PAUSED') game.resume(); else game.pause();
-    previousTime = performance.now(); sync();
+    const active = ['READY', 'PLAYING'].includes(game.state);
+    clearInput();
+    // A suspended frame loop must not charge the unobserved sleep interval.
+    pauseTime = performance.now() - previousTime > 1500 ? previousTime : null;
+    game.pause(); pauseTime = null;
+    sync();
+    if (active && !$('resume').disabled) $('resume').focus({ preventScroll: true });
+  }
+  function resume() {
+    if (game.state !== 'PAUSED' || document.hidden || portraitRequired()) return;
+    clearInput(); unlock(); game.resume();
+    previousTime = performance.now(); sync(); canvas.focus({ preventScroll: true });
   }
   function sync() {
     $('time').textContent = format(game.time()); $('best').textContent = best === null ? '--:--.--' : format(best);
     $('stage').textContent = `${game.stage}/1`; $('life').textContent = game.life;
     $('launch').disabled = game.state !== 'READY';
-    $('pause').disabled = !['READY', 'PLAYING', 'PAUSED'].includes(game.state);
-    $('pause').textContent = game.state === 'PAUSED' ? 'RESUME ▶' : 'PAUSE Ⅱ';
+    $('pause').disabled = !['READY', 'PLAYING'].includes(game.state);
+    $('pause-overlay').hidden = game.state !== 'PAUSED';
+    $('resume').disabled = document.hidden || portraitRequired();
     $('mute').textContent = `MUTE ${muted ? 'ON' : 'OFF'}`; $('mute').setAttribute('aria-pressed', String(muted));
-    const overlay = ['START', 'PAUSED', 'GAME OVER', 'ALL CLEAR'].includes(game.state);
+    const overlay = ['START', 'GAME OVER', 'ALL CLEAR'].includes(game.state);
     $('overlay').hidden = !overlay;
     $('result-home').hidden = !['GAME OVER', 'ALL CLEAR'].includes(game.state);
     if (lastState !== game.state && overlay) {
-      if (game.state === 'PAUSED') {
-        $('eyebrow').textContent = 'TAKE A BREAK'; $('screen-title').textContent = 'PAUSED';
-        $('message').textContent = 'タイマーは停止しています。'; $('hint').textContent = 'RESUME / P で再開'; $('action').textContent = 'RESUME ▶';
-      } else if (game.state !== 'START') {
+      if (game.state !== 'START') {
         $('eyebrow').textContent = game.state === 'ALL CLEAR' ? '1 / 1 STAGE COMPLETE' : 'TRY ONE MORE TIME';
         $('screen-title').textContent = game.state;
         $('message').textContent = `TIME ${format(game.time())}\nMISSES ${game.misses}（+${game.misses * 10}秒）`;
@@ -72,13 +86,13 @@
       }
     }
     lastState = game.state;
-    $('feedback').hidden = overlay || performance.now() > feedbackUntil;
+    $('feedback').hidden = overlay || game.state === 'PAUSED' || performance.now() > feedbackUntil;
   }
-  $('action').addEventListener('click', () => game.state === 'PAUSED' ? pause() : reset());
+  $('action').addEventListener('click', reset);
+  $('resume').addEventListener('click', resume);
   $('retry').addEventListener('click', reset); $('launch').addEventListener('click', launch); $('pause').addEventListener('click', pause);
   $('mute').addEventListener('click', () => { unlock(); muted = !muted; save('my-arcade:block-breaker:muted', muted); sync(); });
   const logicalX = e => (e.clientX - canvas.getBoundingClientRect().left) / canvas.getBoundingClientRect().width * W;
-  let drag = null;
   canvas.addEventListener('pointerdown', e => {
     if (!['READY', 'PLAYING'].includes(game.state) || (e.pointerType === 'mouse' && e.button !== 0) || drag) return;
     unlock(); canvas.focus({ preventScroll: true });
@@ -87,6 +101,7 @@
     e.preventDefault();
   });
   canvas.addEventListener('pointermove', e => {
+    if (!['READY', 'PLAYING'].includes(game.state)) return;
     if (e.pointerType === 'mouse') game.move(logicalX(e));
     else if (drag?.id === e.pointerId) game.move(drag.paddle + logicalX(e) - drag.x);
   });
@@ -98,12 +113,16 @@
     if (e.repeat) return;
     if (e.code === 'Space') launch();
     if (e.code === 'KeyP') pause();
-    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') keys.add(e.code);
+    if (['READY', 'PLAYING'].includes(game.state) && (e.code === 'ArrowLeft' || e.code === 'ArrowRight')) keys.add(e.code);
   });
   document.addEventListener('keyup', e => keys.delete(e.code));
-  function autoPause() { keys.clear(); drag = null; game.pause(); sync(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
-  window.addEventListener('blur', autoPause);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); sync(); });
+  for (const type of ['blur', 'pagehide', 'orientationchange']) window.addEventListener(type, pause);
+  document.addEventListener('freeze', pause);
+  window.addEventListener('pageshow', sync);
+  window.addEventListener('resize', () => { if (portraitRequired()) pause(); sync(); });
+  screen.orientation?.addEventListener('change', pause);
+  matchMedia('(orientation: portrait)').addEventListener('change', pause);
   function resize() {
     const dpr = Math.min(devicePixelRatio || 1, 2), rect = canvas.getBoundingClientRect();
     canvas.width = Math.round(rect.width * dpr); canvas.height = Math.round(rect.height * dpr);
@@ -134,6 +153,7 @@
     ctx.fillStyle = '#ff72bd'; ctx.fillRect(0, H - 2, W, 2);
   }
   function frame(now) {
+    if (now - previousTime > 1500) pause();
     const dt = Math.min(Math.max((now - previousTime) / 1000, 0), .05); previousTime = now;
     game.move(game.paddle + ((keys.has('ArrowRight') ? 1 : 0) - (keys.has('ArrowLeft') ? 1 : 0)) * 420 * dt);
     game.update(dt); sync(); draw(dt); requestAnimationFrame(frame);
