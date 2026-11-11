@@ -88,11 +88,12 @@ function ui(initial = {}, blocked = false) {
   const drawing = new Proxy({}, { get: () => () => {}, set: () => true });
   const node = id => {
     if (!nodes.has(id)) nodes.set(id, { textContent: '', handlers: {},
-      addEventListener(type, cb) { this.handlers[type] = cb; }, setAttribute() {}, focus() {}, setPointerCapture() {},
+      addEventListener(type, cb) { this.handlers[type] = cb; }, setAttribute() {}, focus() {}, setPointerCapture() {}, hasPointerCapture: () => false, releasePointerCapture() {},
       getContext: () => drawing, getBoundingClientRect: () => ({ left: 0, width: 400, height: 580 }) });
     return nodes.get(id);
   };
   const context = vm.createContext({ performance: { now: () => now }, devicePixelRatio: 1,
+    screen: {}, matchMedia: () => ({ matches: false, addEventListener() {} }),
     document: { getElementById: node, addEventListener: (t, cb) => documentEvents[t] = cb, hidden: false },
     window: { addEventListener: (t, cb) => windowEvents[t] = cb },
     localStorage: { getItem(k) { if (blocked) throw Error('blocked'); return storage.get(k) ?? null; },
@@ -141,7 +142,7 @@ test('PCキー・マウスとAndroid相当pointer入力、自動停止の配線�
   canvas.handlers.pointerup(pointer); assert.equal(u.g.state, 'READY');
   u.documentEvents.keydown(key('Space')); assert.equal(u.g.state, 'PLAYING');
   u.tick(100); u.documentEvents.keydown(key('KeyP')); const time = u.g.time(); u.tick(1000);
-  assert.equal(u.g.time(), time); u.documentEvents.keydown(key('KeyP')); assert.equal(u.g.state, 'PLAYING');
+  assert.equal(u.g.time(), time); u.documentEvents.keydown(key('KeyP')); assert.equal(u.g.state, 'PAUSED'); u.click('resume'); assert.equal(u.g.state, 'PLAYING');
   u.context.document.hidden = true; u.documentEvents.visibilitychange(); u.tick(1000); assert.equal(u.g.time(), time);
   u.click('retry'); canvas.handlers.pointerdown({ ...pointer, pointerType: 'mouse', button: 0, clientX: 150 });
   assert.equal(u.g.paddle, 150); assert.equal(u.g.state, 'PLAYING');
@@ -153,9 +154,9 @@ test('終了画面だけにHOMEを表示し、RETRYとPAUSEの状態に追従す
   assert.equal(home.hidden, true); // START
   u.click('action'); assert.equal(home.hidden, true); // READY
   u.click('pause'); assert.equal(home.hidden, true); // PAUSED before launch
-  u.click('action'); u.click('launch'); assert.equal(home.hidden, true); // PLAYING
+  u.click('resume'); u.click('launch'); assert.equal(home.hidden, true); // PLAYING
   u.click('pause'); assert.equal(home.hidden, true); // PAUSED during play
-  u.click('action');
+  u.click('resume');
   for (let i = 0; i < 3; i++) { u.g.miss(); u.g.launch(); }
   u.tick(0); assert.equal(home.hidden, false); assert.equal(u.node('action').textContent, 'RETRY ↻');
   u.click('action'); assert.equal(home.hidden, true); // RETRY from GAME OVER

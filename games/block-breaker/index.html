@@ -18,6 +18,7 @@
     <div>TIME<strong id="time">00:00.00</strong></div><div>BEST<strong id="best">--:--.--</strong></div>
     <div>STAGE<strong id="stage">1/1</strong></div><div>LIFE<strong id="life">3</strong></div>
   </div>
+  <div class="pause-controls"><button id="pause" type="button" disabled>PAUSE Ⅱ</button></div>
   <div class="arena">
     <canvas id="game" width="400" height="580" tabindex="0" aria-label="ブロック崩し。マウス・左右キー・ドラッグで移動。Spaceまたはクリックで発射。">Canvas対応ブラウザーが必要です。</canvas>
     <section class="overlay" id="overlay" aria-labelledby="screen-title">
@@ -28,11 +29,17 @@
       <button id="action" type="button">START ▶</button>
       <a id="result-home" href="../../index.html" hidden>← MY ARCADEへ戻る</a>
     </section>
+    <div id="pause-overlay" class="pause-overlay" hidden>
+      <section class="pause-panel" aria-labelledby="pause-title">
+        <h2 id="pause-title">PAUSED</h2>
+        <button id="resume" type="button">RESUME</button>
+        <a id="pause-home" href="../../index.html">HOME</a>
+      </section>
+    </div>
     <p id="feedback" aria-live="polite">READY — 発射してスタート</p>
   </div>
   <div class="controls">
     <button id="launch" type="button" disabled>LAUNCH ↑</button>
-    <button id="pause" type="button" disabled>PAUSE Ⅱ</button>
     <button id="retry" type="button">RETRY ↻</button>
     <button id="mute" type="button" aria-pressed="false">MUTE OFF</button>
   </div>

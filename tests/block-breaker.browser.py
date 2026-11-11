@@ -45,15 +45,15 @@ with sync_playwright() as p:
         page.evaluate('tick(1000)');assert page.locator('#time').inner_text()=='00:01.00', page.evaluate('({state:g.state,time:g.time(),hidden:document.hidden})')
         page.locator('#pause').click();page.evaluate('tick(3000)');assert page.locator('#time').inner_text()=='00:01.00'
         assert not page.locator('#result-home').is_visible()
-        page.locator('#action').click();page.evaluate('tick(100)')
+        page.locator('#resume').click();page.evaluate('tick(100)')
         page.evaluate('g.ball={x:20,y:585,vx:0,vy:319};tick(16)')
         assert page.locator('#life').inner_text()=='2';assert page.evaluate('g.misses')==1
         before=page.evaluate('g.time()');page.evaluate('tick(1000)');assert page.evaluate('g.time()')==before+1000
         page.evaluate('''Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'));''')
         before=page.evaluate('g.time()');page.evaluate('tick(1000)');assert page.evaluate('g.time()')==before
         assert page.evaluate('g.state')=='PAUSED'
-        page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false})')
-        page.locator('#action').click();assert page.evaluate('g.state')=='READY'
+        page.evaluate('Object.defineProperty(document,"hidden",{configurable:true,value:false});document.dispatchEvent(new Event("visibilitychange"))')
+        page.locator('#resume').click();assert page.evaluate('g.state')=='READY'
         page.locator('#launch').click()
         page.evaluate('for(let i=0;i<2;i++){g.miss();g.launch();}tick(16);')
         assert page.locator('#screen-title').inner_text()=='GAME OVER'
@@ -87,7 +87,7 @@ with sync_playwright() as p:
         for w,h in [(320,568),(844,390),(430,932),(1100,844)]:
             page.set_viewport_size({'width':w,'height':h});page.wait_for_timeout(60);page.evaluate('tick(16)')
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
-            assert page.evaluate('g.state')=='READY'
+            assert page.evaluate('g.state') in ['READY','PAUSED']
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60);page.evaluate('tick(16)')
         page.screenshot(path=f'/tmp/block-breaker-{mobile}.png')
         for width in [320,360,390,430]:
@@ -101,8 +101,92 @@ with sync_playwright() as p:
         assert not errors,errors
         print('PASS:', 'mobile touch' if mobile else 'desktop keyboard','navigation, timer, miss, pause, visibility, results, best, retry, mute, resize, STACK TOWER',flush=True)
         context.close()
+    # Shared pause UI, lifecycle and stale touch checks use the actual controller.
+    for mobile in [False, True]:
+        context=browser.new_context(viewport={'width':390,'height':844},is_mobile=mobile,has_touch=mobile)
+        context.add_init_script(CLOCK);page=context.new_page();page.goto(BASE+'games/block-breaker/')
+        page.evaluate("const update=BlockBreaker.Game.prototype.update;BlockBreaker.Game.prototype.update=function(dt){window.g=this;return update.call(this,dt)};tick(16)")
+        page.locator('#action').click();page.locator('#launch').click();page.evaluate('tick(200)')
+        page.keyboard.down('ArrowRight');page.locator('#pause').click()
+        frozen=page.evaluate('JSON.stringify([g.ball,g.paddle,g.blocks,g.life,g.misses,g.time()])')
+        page.keyboard.press('KeyP');page.evaluate('tick(3000)')
+        assert page.evaluate('g.state')=='PAUSED'
+        assert page.evaluate('JSON.stringify([g.ball,g.paddle,g.blocks,g.life,g.misses,g.time()])')==frozen
+        for width,height in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:
+            page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(80);page.evaluate('tick(16);scrollTo(0,0)')
+            assert page.locator('.pause-panel').inner_text().split()==['PAUSED','RESUME','HOME']
+            assert page.locator('.pause-panel button, .pause-panel a').count()==2
+            assert page.locator('#overlay').is_hidden()
+            box=page.locator('.pause-panel').bounding_box();arena=page.locator('.arena').bounding_box()
+            assert 240<=box['width']<=280 and box['x']>=0 and box['x']+box['width']<=width
+            assert box['y']>=0 and box['y']+box['height']<=height
+            assert abs(box['y']+box['height']/2-arena['y']-arena['height']/2)<1
+            assert page.locator('#pause').bounding_box()['y']+44<=arena['y']
+            for selector in ['#resume','#pause-home']:
+                button=page.locator(selector).bounding_box();assert button['width']>=44 and button['height']>=44
+            assert page.evaluate("getComputedStyle(document.querySelector('#pause-overlay')).backgroundColor")=='rgba(0, 0, 0, 0.7)'
+            assert page.evaluate("Array.from(document.querySelectorAll('#pause-overlay, #pause-overlay *')).every(e=>{const s=getComputedStyle(e);return s.animationName==='none'&&s.transitionDuration==='0s'})")
+            page.screenshot(path=f'/tmp/block-breaker-pause-{mobile}-{width}.png')
+        page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(80)
+        paddle=page.evaluate('g.paddle');time=page.evaluate('g.time()');page.locator('#resume').click()
+        assert page.evaluate('g.state')=='PLAYING' and page.evaluate('g.time()')==time
+        page.keyboard.down('ArrowRight');page.evaluate('tick(100)');assert page.evaluate('g.paddle')==paddle
+        assert page.evaluate('g.time()')==time+100;page.keyboard.up('ArrowRight')
+        # Lifecycle recovery never resumes by itself, including a frame-loop sleep gap.
+        for event in ['blur','pagehide','orientationchange','freeze','visibilitychange','sleep']:
+            before=page.evaluate('g.time()')
+            if event=='sleep':page.evaluate('testNow+=5000;frames.splice(0).forEach(cb=>cb(testNow))')
+            elif event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))")
+            elif event=='freeze':page.evaluate("document.dispatchEvent(new Event('freeze'))")
+            else:page.evaluate('(type)=>dispatchEvent(new Event(type))',event)
+            assert page.evaluate('g.state')=='PAUSED' and page.evaluate('g.time()')==before
+            page.evaluate('tick(2000)');assert page.evaluate('g.time()')==before
+            page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:false});document.dispatchEvent(new Event('visibilitychange'));dispatchEvent(new Event('pageshow'))")
+            assert page.evaluate('g.state')=='PAUSED';page.locator('#resume').click()
+            assert page.evaluate('g.state')=='PLAYING'
+        if mobile:
+            # Keep the pre-pause finger down while activating pause/resume with a second pointer.
+            box=page.locator('canvas').bounding_box();x=box['x']+80;y=box['y']+box['height']*.7
+            session=context.new_cdp_session(page)
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+            session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+30,'y':y}]})
+            page.evaluate("document.querySelector('#pause').click()")
+            paddle=page.evaluate('g.paddle');page.evaluate("document.querySelector('#resume').click()")
+            session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x+60,'y':y}]})
+            assert page.evaluate('g.paddle')==paddle
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[{'x':x,'y':y}]})
+            session.send('Input.dispatchTouchEvent',{'type':'touchMove','touchPoints':[{'x':x-20,'y':y}]})
+            assert page.evaluate('g.paddle')<paddle
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]});session.detach()
+            page.set_viewport_size({'width':844,'height':390});page.wait_for_timeout(100)
+            assert page.evaluate('g.state')=='PAUSED' and page.locator('#resume').is_disabled()
+            page.evaluate("document.querySelector('#resume').click()")
+            assert page.evaluate('g.state')=='PAUSED'
+            page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100)
+            assert page.evaluate('g.state')=='PAUSED' and page.locator('#resume').is_enabled()
+            page.locator('#resume').click();assert page.evaluate('g.state')=='PLAYING'
+        page.locator('#pause').click();page.locator('#retry').click();assert page.evaluate('g.state')=='READY'
+        page.locator('#pause').click();page.locator('#pause-home').click();page.wait_for_url(BASE+'index.html')
+        context.close();print('PASS: shared pause layouts, frozen state, immediate resume, stale keys/touch, lifecycle/sleep, orientation, RETRY and HOME',mobile,flush=True)
     context=browser.new_context();context.add_init_script("Object.defineProperty(window,'localStorage',{get(){throw new Error('blocked')}})")
     page=context.new_page();page.goto(BASE+'games/block-breaker/');page.locator('#action').click();page.locator('#launch').click()
     assert page.locator('#pause').is_enabled()
     print('PASS: blocked localStorage remains playable')
-    browser.close()
+    # Real animation, mouse launch/hover and existing Web Audio effects.
+    context=browser.new_context(viewport={'width':1100,'height':900});page=context.new_page()
+    page.goto(BASE+'games/block-breaker/')
+    page.evaluate("() => {const update=BlockBreaker.Game.prototype.update;BlockBreaker.Game.prototype.update=function(dt){window.g=this;return update.call(this,dt)};window.tones=0;const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;return make.call(this)}}")
+    page.locator('#action').click();box=page.locator('canvas').bounding_box()
+    page.mouse.move(box['x']+box['width']*.3,box['y']+box['height']*.7)
+    assert page.evaluate('g.paddle')<200
+    page.mouse.click(box['x']+box['width']*.3,box['y']+box['height']*.7)
+    assert page.evaluate('g.state')=='PLAYING';page.wait_for_timeout(100)
+    page.locator('#pause').click();before=page.evaluate('g.time()');paddle=page.evaluate('g.paddle')
+    page.wait_for_timeout(250);assert page.evaluate('g.time()')==before
+    page.locator('#resume').click();page.wait_for_timeout(100)
+    assert before<page.evaluate('g.time()')<before+250 and page.evaluate('g.paddle')==paddle
+    page.evaluate('g.destroy(0)');assert page.evaluate('tones')>0
+    page.locator('#mute').click();tones=page.evaluate('tones');page.evaluate('g.destroy(0)')
+    assert page.evaluate('tones')==tones
+    context.close();browser.close();print('PASS: real frames, mouse movement/launch, pause clock and Web Audio mute',flush=True)
