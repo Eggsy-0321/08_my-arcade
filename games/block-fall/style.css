@@ -36,3 +36,12 @@ h2 { font-size: clamp(22px, 6vw, 34px); margin: 0; color: #8be4ce; }
 @media (max-height: 620px) { .game-shell { gap: 4px; } .hud { gap: 7px; } .endless { display: none; } .help { font-size: 8px; } .overlay { gap: 7px; } }
 @media (orientation: landscape) and (max-height: 540px) { .game-shell { width: min(100%, 850px); display: grid; grid-template-columns: 1fr 180px; grid-template-rows: 28px 1fr 20px; gap: 4px 12px; } header { grid-column: 2; grid-row: 1; } .title-row { grid-column: 2; grid-row: 2; align-self: start; flex-direction: column; } .arena { grid-column: 1; grid-row: 1 / 4; } .controls { grid-column: 2; grid-row: 2; align-self: end; grid-template-columns: repeat(3, 1fr); } .controls button { height: 58px; } .help { grid-column: 2; grid-row: 3; font-size: 7px; } .overlay { gap: 5px; } }
 @media (max-height: 380px) { .game-shell { min-height: 360px; } }
+
+#pause-overlay { position: absolute; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, .pause-panel a { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; touch-action: manipulation; }
+#resume { color: #080e20; background: #65efff; border-color: #65efff; font-weight: bold; }
+#pause-home { background: transparent; border: 2px solid #426485; border-radius: 4px; color: #b4c9de; font-size: 12px; font-weight: bold; }
+.controls button:active { background: #24334a; }
+.controls button.is-held:not(:disabled) { background: #3b5266; }

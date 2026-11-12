@@ -29,10 +29,16 @@
         <p id="message">つないで、消して、その先へ。<br>横一列を埋めてハイスコアを目指そう。</p>
         <p id="results" hidden></p>
         <button id="start" type="button">START</button>
-        <button id="resume" type="button" hidden>RESUME</button>
         <button id="retry" type="button" hidden>RETRY</button>
         <a id="home" href="../../index.html">HOME / MY ARCADEへ戻る</a>
       </section>
+      <div id="pause-overlay" hidden>
+        <section class="pause-panel" aria-labelledby="pause-title">
+          <h2 id="pause-title">PAUSED</h2>
+          <button id="resume" type="button">RESUME</button>
+          <a id="pause-home" href="../../index.html">HOME</a>
+        </section>
+      </div>
     </section>
     <nav class="controls" aria-label="ゲーム操作">
       <button type="button" data-action="left" aria-label="左へ移動"><b>◀</b>LEFT</button>
