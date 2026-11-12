@@ -14,10 +14,30 @@ with sync_playwright() as p:
         c.add_init_script(CLOCK);page=c.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
         page.goto(BASE);launch_game(page,'CYCLE RUNNER');page.wait_for_url(BASE+'games/cycle-runner/index.html');page.evaluate(OBSERVE)
         page.locator('#start').click();page.evaluate('tick(0)');assert page.locator('#countdown').inner_text()=='3'
-        for text in ['2','1','GO!']:
+        page.evaluate('advance(250)');remaining=page.evaluate('g.count');page.locator('#pause').click();page.evaluate('advance(5000)');assert page.evaluate('g.count')==remaining
+        page.locator('#resume').click();assert page.evaluate('g.state')=='COUNTDOWN';assert page.evaluate('g.count')==remaining;page.evaluate('tick(0);advance(750)');assert page.locator('#countdown').inner_text()=='2'
+        for text in ['1','GO!']:
             page.evaluate('advance(1000)');assert page.locator('#countdown').inner_text()==text
             assert page.evaluate('g.distance')==0 and page.evaluate('g.elapsed')==0
         page.evaluate('advance(350)');assert page.evaluate('g.state')=='RUNNING'
+        # Dedicated PAUSE and RESUME preserve the running phase.
+        page.locator('#pause').click();page.locator('#resume').click();assert page.evaluate('g.state')=='RUNNING'
+        for width,height in [(320,568),(360,640),(390,844),(430,932),(1100,844)]:
+            page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(60)
+            if page.evaluate('g.state')!='PAUSED':page.locator('#pause').click()
+            assert page.locator('#pause-overlay').inner_text().split()==['PAUSED','RESUME','HOME']
+            assert page.locator('#overlay').is_hidden()
+            assert page.locator('.pause-panel').evaluate('(e)=>getComputedStyle(e).width')=='260px'
+            assert page.locator('#pause-overlay').evaluate('(e)=>getComputedStyle(e).backgroundColor')=='rgba(0, 0, 0, 0.7)'
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight')
+            panel=page.locator('.pause-panel').bounding_box();stage=page.locator('.stage').bounding_box()
+            assert abs(panel['x']+panel['width']/2-stage['x']-stage['width']/2)<1
+            assert abs(panel['y']+panel['height']/2-stage['y']-stage['height']/2)<1
+            assert panel['y']>=stage['y'] and panel['y']+panel['height']<=stage['y']+stage['height']
+            for id in ['resume','pause-home']:
+                b=page.locator('#'+id).bounding_box();assert b['width']>=44 and b['height']>=44
+            if width==320:page.screenshot(path=f'/tmp/cycle-pause-{mobile}.png')
+        page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(60);page.locator('#resume').click();page.evaluate('tick(0)')
         if mobile:
             session=c.new_cdp_session(page);b=page.locator('#jump').bounding_box();point={'x':b['x']+b['width']/2,'y':b['y']+b['height']/2,'id':1}
             session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[point]})
@@ -27,21 +47,70 @@ with sync_playwright() as p:
             page.keyboard.down('Space');page.keyboard.down('Space');page.evaluate('advance(200)');assert page.evaluate('g.jumps')==1
             page.keyboard.up('Space');page.keyboard.press('Space')
         assert page.evaluate('g.jumps')==2;page.locator('#jump').dispatch_event('pointerdown',{'pointerId':99,'pointerType':'touch'});assert page.evaluate('g.jumps')==2
+        page.dispatch_event('body','pointerup',{'pointerId':99})
+        # Pause in midair while a real touch/Space is held, and discard that input.
         page.evaluate('advance(1000)');assert page.evaluate('g.jumps')==0
+        if mobile:session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[point]})
+        else:page.keyboard.down('Space')
+        page.evaluate('advance(150)');assert page.evaluate('g.y>0 && g.jumps===1')
+        if mobile:
+            b=page.locator('#pause').bounding_box();pause_point={'x':b['x']+b['width']/2,'y':b['y']+b['height']/2,'id':2}
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[point,pause_point]})
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[pause_point]})
+        else:page.locator('#pause').click()
+        assert page.evaluate('g.state')=='PAUSED'
+        snapshot=page.evaluate('JSON.stringify([g.distance,g.speed,g.elapsed,g.y,g.vy,g.jumps,g.groups,g.next,g.count])')
+        pixels=page.locator('canvas').evaluate('(c)=>c.toDataURL()')
+        assert not page.locator('#jump').evaluate('(e)=>e.classList.contains("is-held")')
+        page.evaluate('advance(60000)')
+        assert page.evaluate('JSON.stringify([g.distance,g.speed,g.elapsed,g.y,g.vy,g.jumps,g.groups,g.next,g.count])')==snapshot
+        assert page.locator('canvas').evaluate('(c)=>c.toDataURL()')==pixels
+        if mobile:
+            b=page.locator('#resume').bounding_box();resume_point={'x':b['x']+b['width']/2,'y':b['y']+b['height']/2,'id':2}
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[point,resume_point]})
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[resume_point]})
+        else:page.locator('#resume').click()
+        assert page.evaluate('g.state')=='RUNNING'
+        assert page.evaluate('JSON.stringify([g.distance,g.speed,g.elapsed,g.y,g.vy,g.jumps,g.groups,g.next,g.count])')==snapshot
+        if mobile:
+            fresh=dict(point,id=3)
+            session.send('Input.dispatchTouchEvent',{'type':'touchStart','touchPoints':[point,fresh]})
+            assert page.evaluate('g.jumps')==2
+            session.send('Input.dispatchTouchEvent',{'type':'touchEnd','touchPoints':[]})
+        else:
+            page.keyboard.down('Space');assert page.evaluate('g.jumps')==1
+            page.keyboard.up('Space')
+        assert page.evaluate('g.jumps')==(2 if mobile else 1)
+        page.evaluate('tick(0);advance(50)');assert page.evaluate('g.elapsed')<2
+        if not mobile:page.keyboard.press('Space')
+        assert page.evaluate('g.jumps')==2
+        page.evaluate('advance(1000)');assert page.evaluate('g.jumps')==0
+
         page.keyboard.press('Escape');assert page.evaluate('g.state')=='PAUSED';before=page.evaluate('[g.distance,g.elapsed,g.y]');page.evaluate('advance(5000)');assert page.evaluate('[g.distance,g.elapsed,g.y]')==before
-        page.keyboard.press('Escape');assert page.evaluate('g.state')=='COUNTDOWN';page.evaluate('tick(0);advance(3350)');assert page.evaluate('g.distance')==before[0]
-        for event in ['blur','pagehide','orientationchange','visibilitychange']:
+        page.keyboard.press('Escape');assert page.evaluate('g.state')=='PAUSED'
+        page.locator('#resume').click();assert page.evaluate('g.state')=='RUNNING';assert page.locator('#countdown').is_hidden();page.evaluate('tick(0)');assert page.evaluate('g.distance')==before[0]
+        for event in ['blur','pagehide','orientationchange','visibilitychange','freeze']:
             if event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))")
+            elif event=='freeze':page.evaluate("document.dispatchEvent(new Event('freeze'))")
             else:page.evaluate('(e)=>dispatchEvent(new Event(e))',event)
             assert page.evaluate('g.state')=='PAUSED'
-            if event=='visibilitychange':page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:false})")
-            page.locator('#resume').click();page.evaluate('tick(0);advance(3350)');assert page.evaluate('g.state')=='RUNNING'
+            if event=='visibilitychange':
+                assert page.locator('#resume').is_disabled();page.locator('#resume').dispatch_event('click');assert page.evaluate('g.state')=='PAUSED'
+                page.evaluate("Object.defineProperty(document,'hidden',{configurable:true,value:false})")
+            page.evaluate('advance(5000)');assert page.evaluate('g.state')=='PAUSED'
+            page.locator('#resume').click();assert page.evaluate('g.state')=='RUNNING';page.evaluate('tick(0)')
         page.evaluate('tick(5000)');assert page.evaluate('g.state')=='PAUSED'
         page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100);page.locator('#resume').click();page.evaluate('tick(0);advance(500)');page.set_viewport_size({'width':844,'height':390});page.wait_for_timeout(100);assert page.evaluate('g.state')=='PAUSED'
-        page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100);page.locator('#resume').click();page.evaluate('tick(0);advance(3350)')
+        if mobile:
+            assert page.locator('#resume').is_disabled();page.locator('#resume').dispatch_event('click');assert page.evaluate('g.state')=='PAUSED'
+        page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(100);assert page.locator('#resume').is_enabled();assert page.evaluate('g.state')=='PAUSED';page.locator('#resume').click();page.evaluate('tick(0)')
         page.evaluate("g.groups=[];g.next=1e6;advance(2000);g.over('test');tick(0)");assert page.locator('#heading').inner_text()=='GAME OVER'
         assert int(page.evaluate('localStorage.getItem("my-arcade:cycle-runner:best")'))>0
-        best=page.locator('#best').inner_text();course=page.evaluate('JSON.stringify(g.groups)')
+        best=page.locator('#best').inner_text();page.locator('#retry').click();course=page.evaluate('JSON.stringify(g.groups)')
+        for hazard in ['crate','cone','hole']:
+            page.evaluate("type=>{tick(0);advance(3350);g.groups=[{end:300,hazards:[{x:20,w:100,h:30,type}]}];g.next=10000;advance(500)}",hazard)
+            assert page.evaluate('g.state')=='GAME_OVER';assert page.evaluate('g.reason')==('hole' if hazard=='hole' else 'obstacle')
+            if hazard!='hole':page.locator('#retry').click()
         for width,height in [(320,568),(360,640),(390,844),(430,932),(1100,844),(844,390)]:
             page.set_viewport_size({'width':width,'height':height});page.wait_for_timeout(50)
             assert page.evaluate('document.documentElement.scrollWidth<=innerWidth && document.documentElement.scrollHeight<=innerHeight'),(width,height)
@@ -50,8 +119,8 @@ with sync_playwright() as p:
         page.set_viewport_size({'width':390,'height':844});page.screenshot(path=f'/tmp/cycle-result-{mobile}.png')
         page.locator('#retry').click();assert page.evaluate('g.distance+g.jumps+g.y+g.elapsed')==0;assert page.evaluate('g.speed')==110;assert page.evaluate('JSON.stringify(g.groups)')!=course
         page.locator('#sound').click();page.reload();assert page.locator('#sound').inner_text()=='SOUND OFF';assert page.locator('#best').inner_text()==best
-        page.locator('#home').click();page.wait_for_url(BASE+'index.html');assert not errors,errors;c.close()
-        print('PASS:', 'Android touch' if mobile else 'PC keyboard', 'countdown, holds, jumps, pause/resume, lifecycle/sleep/rotation, retry, storage, layouts, portal/home',flush=True)
+        page.locator('#start').click();page.locator('#pause').click();page.locator('#pause-home').click();page.wait_for_url(BASE+'index.html');assert not errors,errors;c.close()
+        print('PASS:', 'Chromium touch emulation' if mobile else 'PC keyboard', 'countdown, holds, jumps, pause/resume, lifecycle/sleep/rotation, retry, storage, layouts, portal/home',flush=True)
     for failure in ['get','set','invalid','audio-missing','audio-throws','audio-rejects']:
         c=browser.new_context();c.add_init_script(CLOCK)
         if failure in ['get','set']:c.add_init_script(f'Storage.prototype.{failure}Item=function(){{throw Error("blocked")}}')
@@ -63,6 +132,11 @@ with sync_playwright() as p:
         page.locator('#start').click();page.evaluate("tick(0);advance(3350);g.groups=[];g.next=1e6;advance(2000);g.over('test');tick(0)")
         assert page.locator('#best').inner_text()!='0 m';assert page.locator('#retry').is_visible();assert not errors,errors;c.close();print('PASS:',failure,flush=True)
     c=browser.new_context(viewport={'width':390,'height':844});page=c.new_page();page.goto(BASE+'games/cycle-runner/');page.evaluate(OBSERVE)
-    page.evaluate("() => {window.tones=0;const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;return make.call(this)};}")
-    page.locator('#start').click();page.wait_for_timeout(3550);assert page.evaluate('g.state')=='RUNNING';page.locator('#jump').click();page.wait_for_timeout(100);page.locator('#jump').click();page.wait_for_function('g.jumps===0',timeout=3000)
-    assert page.evaluate('tones')>=6, page.evaluate('[tones,g.state,g.jumps,g.y]');assert page.evaluate('g.distance')>0;page.screenshot(path='/tmp/cycle-running.png');c.close();browser.close();print('PASS: real animation frames, countdown, jump/double/landing audio',flush=True)
+    page.evaluate("() => {window.tones=0;window.voices=[];const make=AudioContext.prototype.createOscillator;AudioContext.prototype.createOscillator=function(){tones++;const o=make.call(this),stop=o.stop.bind(o);o.stopCalls=[];o.stop=function(t){o.stopCalls.push(t);return stop(t)};voices.push(o);return o};}")
+    page.locator('#start').click();page.wait_for_timeout(3550);assert page.evaluate('g.state')=='RUNNING';page.locator('#jump').click();page.wait_for_timeout(100);page.locator('#jump').click();page.locator('#pause').click();assert page.evaluate('g.state')=='PAUSED'
+    assert page.evaluate('voices.some(o=>o.stopCalls.includes(undefined))')
+    before=page.evaluate('[g.distance,g.elapsed,g.y,g.vy,g.jumps,tones]');page.wait_for_timeout(300);assert page.evaluate('[g.distance,g.elapsed,g.y,g.vy,g.jumps,tones]')==before
+    page.locator('#resume').click();assert page.evaluate('g.state')=='RUNNING';page.wait_for_function('g.jumps===0',timeout=3000)
+    assert page.evaluate('tones')>=6, page.evaluate('[tones,g.state,g.jumps,g.y]');assert page.evaluate('g.distance')>0
+    page.locator('#sound').click();tones=page.evaluate('tones');page.locator('#jump').click();page.wait_for_timeout(200);assert page.evaluate('tones')==tones
+    page.screenshot(path='/tmp/cycle-running.png');c.close();browser.close();print('PASS: real animation frames, countdown, jump/double/landing audio',flush=True)
