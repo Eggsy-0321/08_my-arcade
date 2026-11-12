@@ -6,7 +6,9 @@
   const board = $('board'), ctx = board.getContext('2d'), preview = $('next').getContext('2d');
   const buttons = [...document.querySelectorAll('[data-action]')];
   const colors = { I: '#76ddeb', O: '#f3cf7b', T: '#be96e3', L: '#e8a570', J: '#7ca4ed', S: '#94d6a0', Z: '#ec8c9b' };
-  let audio, last = null, previousState = 'START';
+  let audio, last = null, previousState = 'START', pausedState = null;
+  const portraitRequired = () => (navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches) && innerWidth > innerHeight;
+  function inputDisplay() { buttons.forEach(b => b.classList.toggle('is-held', input.has(b.dataset.action))); }
   const voices = new Set();
   function unlock() {
     try { const Audio = window.AudioContext || window.webkitAudioContext;
@@ -28,7 +30,7 @@
   }
   const game = new Game({ onEvent: tone });
   function clearInput() {
-    input.clear();
+    input.clear(); inputDisplay();
     for (const [id,button] of pointers) { try { if (button.hasPointerCapture(id)) button.releasePointerCapture(id); } catch { /* Pointer already released. */ } }
     pointers.clear();
   }
@@ -39,17 +41,34 @@
     for (const [id,value] of [['score',game.score],['best',records.best],['lines',game.lines],['level',game.level]]) $(id).textContent = value;
     $('sound').textContent = 'SOUND ' + (records.sound ? 'ON' : 'OFF'); $('sound').setAttribute('aria-pressed', String(records.sound));
     $('pause').disabled = !(playing || countdown); buttons.forEach(b => { b.disabled = !playing; });
-    $('overlay').hidden = playing || countdown; $('countdown').hidden = !countdown;
+    $('overlay').hidden = playing || countdown || paused;
+    $('pause-overlay').hidden = !paused; $('resume').disabled = document.hidden || portraitRequired(); $('countdown').hidden = !countdown;
     $('countdown').textContent = Math.max(1, Math.ceil(game.count-1e-9));
-    $('heading').textContent = over ? 'GAME OVER' : paused ? 'PAUSED' : 'BLOCK FALL';
-    $('message').hidden = over; $('message').textContent = paused ? '準備ができたらRESUMEで再開しよう。' : 'つないで、消して、その先へ。\n横一列を埋めてハイスコアを目指そう。';
+    $('heading').textContent = over ? 'GAME OVER' : 'BLOCK FALL';
+    $('message').hidden = over; $('message').textContent = 'つないで、消して、その先へ。\n横一列を埋めてハイスコアを目指そう。';
     $('results').hidden = !over; $('results').textContent = `SCORE  ${game.score}\nBEST  ${records.best}\nLINES  ${game.lines}`;
-    $('start').hidden = game.state !== 'START'; $('resume').hidden = !paused; $('retry').hidden = !over;
+    $('start').hidden = game.state !== 'START'; $('retry').hidden = !over;
     $('next').setAttribute('aria-label', game.next ? `次のブロック ${game.next}` : '次のブロック');
   }
-  function begin() { unlock(); clearInput(); game.start(); last = null; sync(); draw(); }
-  function pause() { clearInput(); game.pause(); silence(); last = null; sync(); draw(); }
-  function resume() { unlock(); clearInput(); game.resume(); last = null; sync(); draw(); }
+  function begin() { unlock(); clearInput(); pausedState = null; game.start(); last = null; sync(); draw(); }
+  function pause() {
+    clearInput();
+    const previous = game.state;
+    if (game.pause()) {
+      pausedState = previous;
+      // Release SOFT without resetting the saved fall timer on the next update.
+      game.softHeld = false;
+    }
+    silence(); last = null; sync(); draw();
+  }
+  function resume() {
+    if (game.state !== 'PAUSED' || document.hidden || portraitRequired()) return;
+    unlock(); clearInput();
+    // model.resume() starts a new countdown; restore the saved phase instead.
+    // START/RETRY countdown and gravity/lock timers retain their remaining time.
+    game.state = pausedState; pausedState = null; last = null; sync(); draw();
+    $('resume').blur();
+  }
   function action(name) {
     if (game.state !== 'PLAYING') return;
     if (name === 'left' || name === 'right') game.move(name === 'left' ? -1 : 1);
@@ -60,9 +79,16 @@
   }
   $('start').addEventListener('click', begin); $('retry').addEventListener('click', begin);
   $('pause').addEventListener('click', pause); $('resume').addEventListener('click', resume);
+  // A second finger may not generate click while an operation touch is held.
+  for (const [id, handler] of [['pause', pause], ['resume', resume]]) {
+    $(id).addEventListener('pointerup', e => {
+      if (e.pointerType === 'touch' && !e.isPrimary && $(id).contains(document.elementFromPoint(e.clientX, e.clientY))) { e.preventDefault(); handler(); }
+    });
+  }
+  $('pause-home').addEventListener('click', () => { clearInput(); silence(); });
   $('sound').addEventListener('click', () => { unlock(); records.toggle(); if (!records.sound) silence(); sync(); });
   function releasePointer(id) {
-    input.release('p'+id); const b = pointers.get(id); pointers.delete(id);
+    input.release('p'+id); inputDisplay(); const b = pointers.get(id); pointers.delete(id);
     try { if (b?.hasPointerCapture(id)) b.releasePointerCapture(id); } catch { /* Already released. */ }
   }
   for (const b of buttons) {
@@ -71,6 +97,7 @@
       e.preventDefault(); if (game.state !== 'PLAYING' || (e.pointerType === 'mouse' && e.button !== 0)) return;
       unlock(); pointers.set(e.pointerId,b); b.setPointerCapture(e.pointerId);
       if (input.press('p'+e.pointerId,b.dataset.action)) action(b.dataset.action);
+      inputDisplay();
     });
     b.addEventListener('lostpointercapture', e => releasePointer(e.pointerId));
     b.addEventListener('pointermove', e => {
@@ -85,14 +112,15 @@
     if (e.code === 'Escape') { e.preventDefault(); if (!e.repeat) game.state === 'PAUSED' ? resume() : pause(); return; }
     const name = keys[e.code]; if (!name || !['PLAYING','COUNTDOWN','PAUSED'].includes(game.state)) return;
     e.preventDefault(); if (e.repeat || game.state !== 'PLAYING') return;
-    unlock(); if (input.press('k'+e.code,name)) action(name);
+    unlock(); if (input.press('k'+e.code,name)) action(name); inputDisplay();
   });
-  window.addEventListener('keyup', e => { if (keys[e.code] && ['PLAYING','COUNTDOWN','PAUSED'].includes(game.state)) e.preventDefault(); input.release('k'+e.code); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); });
+  window.addEventListener('keyup', e => { if (keys[e.code] && ['PLAYING','COUNTDOWN','PAUSED'].includes(game.state)) e.preventDefault(); input.release('k'+e.code); inputDisplay(); });
+  document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); sync(); });
+  document.addEventListener('freeze', pause);
   for (const event of ['blur','pagehide','orientationchange']) window.addEventListener(event,pause);
   screen.orientation?.addEventListener('change',pause);
   let landscape = innerWidth > innerHeight;
-  window.addEventListener('resize', () => { const next = innerWidth > innerHeight; if (next !== landscape) pause(); landscape = next; });
+  window.addEventListener('resize', () => { const next = innerWidth > innerHeight; if (next !== landscape || portraitRequired()) pause(); landscape = next; sync(); });
   function block(context, x, y, size, type, ghost = false) {
     context.fillStyle = ghost ? '#b8cfdf22' : colors[type]; context.fillRect(x+1,y+1,size-2,size-2);
     context.strokeStyle = ghost ? '#9bb9ca' : '#ffffff60'; context.lineWidth = ghost ? 2 : 1;
