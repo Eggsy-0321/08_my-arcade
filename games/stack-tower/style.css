@@ -32,3 +32,15 @@ button:hover { background: #b0fffc; } button:active { transform: translateY(2px)
 footer { display: flex; justify-content: space-between; gap: 8px; padding: 12px 2px; font-size: 10px; color: #a3a2bb; flex-shrink: 0; }
 @media (max-height: 650px) { .marquee { padding: 6px; } .hud { padding: 8px 4px; } .overlay { gap: 8px; } .tower-icon { display: none; } footer { padding: 8px 2px; } }
 @media (prefers-reduced-motion: reduce) { button:active { transform: none; } }
+
+.hud { align-items: center; gap: 8px; }
+#pause { min-width: 68px; min-height: 44px; padding: 8px; border: 1px solid #65efff; background: #0b1429; color: #65efff; font-size: 12px; }
+#pause:disabled { opacity: 0.45; cursor: default; }
+.pause-overlay { position: absolute; z-index: 4; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, #pause-home { display: flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 10px; border: 1px solid #65efff; font: bold 16px/1.2 Consolas, monospace; }
+#resume { background: #65efff; color: #07121f; }
+#resume:disabled { opacity: 0.45; cursor: default; }
+#pause-home { background: transparent; border-color: #426485; color: #b4c9de; }
+#pause:active, .pause-panel button:active { transform: none; }
