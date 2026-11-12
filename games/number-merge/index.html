@@ -17,6 +17,7 @@
   <div class="hud">
     <div>TIME<strong id="time">00:00.00</strong></div>
     <div>BEST<strong id="best">--:--.--</strong></div>
+    <button id="pause" type="button" disabled>PAUSE</button>
   </div>
   <div class="arena">
     <div id="board" tabindex="0" role="group" aria-label="4×4の盤面。矢印キーまたはスワイプで操作。"></div>
@@ -32,6 +33,13 @@
         <a class="button" id="home" href="../../index.html">HOME</a>
       </div>
       <p class="hint" id="hint">スワイプ / ↑ ↓ ← → で移動<br>同じ数字を合体。2048完成でクリア。</p>
+    </section>
+    <section class="pause-overlay" id="pause-overlay" aria-labelledby="pause-title" hidden>
+      <div class="pause-panel">
+        <h2 id="pause-title">PAUSED</h2>
+        <button id="resume" type="button">RESUME</button>
+        <a class="button" id="pause-home" href="../../index.html">HOME</a>
+      </div>
     </section>
   </div>
   <p class="instructions">SWIPE / ↑ ↓ ← → <span>GOAL <b>2048</b></span></p>
