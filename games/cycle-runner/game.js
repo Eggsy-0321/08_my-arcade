@@ -5,12 +5,17 @@
   const read = key => { try { return localStorage.getItem(prefix + key); } catch { return null; } };
   const save = (key, value) => { try { localStorage.setItem(prefix + key, value); } catch { /* Keep the in-page value. */ } };
   let best = record(read('best')), sound = read('sound') !== 'off', audio, newBest = false, last = null;
+  const voices = new Set();
+  let pausedState = null, pointer = null, spaceHeld = false;
+  const portraitRequired = () => (navigator.maxTouchPoints > 0 || matchMedia('(pointer: coarse)').matches) && innerWidth > innerHeight;
+  function clearInput() { pointer = null; spaceHeld = false; $('jump').classList.remove('is-held'); }
+  function stopTones() { for (const voice of voices) { try { voice.stop(); } catch { /* Already ended. */ } } voices.clear(); }
   function unlock() { try { if (!audio) { const Audio = window.AudioContext || window.webkitAudioContext; if (Audio) audio = new Audio(); } if (audio?.state === 'suspended') Promise.resolve(audio.resume()).catch(() => {}); } catch { /* Audio is optional. */ } }
   function tone(type) {
-    if (!sound || !audio) return;
+    if (!sound || !audio || game.state === 'PAUSED') return;
     const notes = { jump: [330, 520], double: [520, 780], land: [130, 100], crash: [170, 45], best: [660, 880, 1100] }[type];
     try { notes.forEach((f, i) => { const o = audio.createOscillator(), gain = audio.createGain(), t = audio.currentTime + i * .065;
-      o.type = type === 'crash' ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(f, t); gain.gain.setValueAtTime(.035, t); gain.gain.exponentialRampToValueAtTime(.001, t + .09); o.connect(gain); gain.connect(audio.destination); o.start(t); o.stop(t + .1); }); } catch { /* Audio failure never stops play. */ }
+      o.type = type === 'crash' ? 'sawtooth' : 'square'; o.frequency.setValueAtTime(f, t); gain.gain.setValueAtTime(.035, t); gain.gain.exponentialRampToValueAtTime(.001, t + .09); o.connect(gain); gain.connect(audio.destination); voices.add(o); o.onended = () => voices.delete(o); o.start(t); o.stop(t + .1); }); } catch { /* Audio failure never stops play. */ }
   }
   const game = new Game({ onEvent: tone });
   function sync() {
@@ -19,36 +24,55 @@
     if (over && meters > best) { best = meters; newBest = true; save('best', String(best)); tone('best'); }
     $('distance').textContent = meters + ' m'; $('best').textContent = best + ' m';
     $('sound').textContent = 'SOUND ' + (sound ? 'ON' : 'OFF'); $('sound').setAttribute('aria-pressed', String(sound));
-    $('jump').disabled = !running; $('pause').disabled = !(running || countdown); $('overlay').hidden = running || countdown;
+    $('jump').disabled = !running; $('pause').disabled = !(running || countdown); $('overlay').hidden = running || countdown || paused;
+    $('pause-overlay').hidden = !paused; $('resume').disabled = document.hidden || portraitRequired();
     $('countdown').hidden = !countdown; $('countdown').textContent = game.count > .350000001 ? String(Math.ceil(game.count - .350000001)) : 'GO!';
-    $('heading').textContent = over ? 'GAME OVER' : paused ? 'PAUSED' : 'CYCLE RUNNER';
-    $('message').hidden = over; $('message').innerHTML = paused ? 'ひと休み。準備ができたら再開しよう。' : 'ペダルは止めずに、街の先へ。<br>最大2段ジャンプで道路を駆け抜けよう。';
+    $('heading').textContent = over ? 'GAME OVER' : 'CYCLE RUNNER';
+    $('message').hidden = over; $('message').innerHTML = 'ペダルは止めずに、街の先へ。<br>最大2段ジャンプで道路を駆け抜けよう。';
     $('results').hidden = !over; $('results').textContent = `DISTANCE  ${meters} m\nBEST  ${best} m${newBest ? '\nNEW BEST!' : ''}`;
-    $('start').hidden = game.state !== 'TITLE'; $('resume').hidden = !paused; $('retry').hidden = !over;
+    $('start').hidden = game.state !== 'TITLE'; $('retry').hidden = !over;
     document.querySelector('.jump-lights').textContent = '◆ '.repeat(2 - game.jumps) + '◇ '.repeat(game.jumps);
   }
-  function begin() { unlock(); newBest = false; game.start(); last = null; sync(); }
-  function pause() { game.pause(); last = null; sync(); }
-  function resume() { unlock(); game.resume(); last = null; sync(); }
+  function begin() { clearInput(); pausedState = null; unlock(); newBest = false; game.start(); last = null; sync(); }
+  function pause() {
+    clearInput();
+    const previous = game.state;
+    if (game.pause()) { pausedState = previous; stopTones(); }
+    last = null; sync();
+  }
+  function resume() {
+    if (game.state !== 'PAUSED' || document.hidden || portraitRequired()) return;
+    clearInput(); unlock();
+    // Restore the UI's saved phase directly: model.resume() starts a new countdown.
+    // Keep START/RETRY countdown progress, but resume an active ride immediately.
+    game.state = pausedState; pausedState = null; last = null; sync();
+    $('resume').blur();
+  }
   function jump() { unlock(); game.jump(); sync(); }
   $('start').addEventListener('click', begin); $('retry').addEventListener('click', begin); $('pause').addEventListener('click', pause); $('resume').addEventListener('click', resume);
+  // A second finger may not produce click while the original JUMP touch remains down.
+  for (const [id, action] of [['pause', pause], ['resume', resume]]) {
+    $(id).addEventListener('pointerup', e => {
+      if (e.pointerType === 'touch' && !e.isPrimary && $(id).contains(document.elementFromPoint(e.clientX, e.clientY))) { e.preventDefault(); action(); }
+    });
+  }
   $('sound').addEventListener('click', () => { unlock(); sound = !sound; save('sound', sound ? 'on' : 'off'); sync(); });
-  let pointer = null, spaceHeld = false;
-  $('jump').addEventListener('pointerdown', e => { e.preventDefault(); if (pointer !== null || (e.pointerType === 'mouse' && e.button !== 0)) return; pointer = e.pointerId; jump(); });
-  const clearPointer = e => { if (!e || e.pointerId === pointer) pointer = null; };
+  $('jump').addEventListener('pointerdown', e => { e.preventDefault(); if (pointer !== null || (e.pointerType === 'mouse' && e.button !== 0)) return; if (game.state !== 'RUNNING') return; pointer = e.pointerId; $('jump').classList.add('is-held'); jump(); });
+  const clearPointer = e => { if (!e || e.pointerId === pointer) { pointer = null; $('jump').classList.toggle('is-held', spaceHeld); } };
   window.addEventListener('pointerup', clearPointer); window.addEventListener('pointercancel', clearPointer);
   $('jump').addEventListener('contextmenu', e => e.preventDefault());
   window.addEventListener('keydown', e => {
-    if (e.code === 'Space') { if (!['RUNNING', 'COUNTDOWN'].includes(game.state) && e.target !== $('jump')) return; e.preventDefault(); if (e.repeat || spaceHeld) return; spaceHeld = true; jump(); }
-    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; game.state === 'PAUSED' ? resume() : pause(); }
+    if (e.code === 'Space') { if (!['RUNNING', 'COUNTDOWN'].includes(game.state) && e.target !== $('jump')) return; e.preventDefault(); if (e.repeat || spaceHeld) return; spaceHeld = true; $('jump').classList.add('is-held'); jump(); }
+    if (e.code === 'Escape') { e.preventDefault(); if (e.repeat) return; pause(); }
   });
-  window.addEventListener('keyup', e => { if (e.code === 'Space') spaceHeld = false; });
-  function autoPause() { pointer = null; spaceHeld = false; pause(); }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
+  window.addEventListener('keyup', e => { if (e.code === 'Space') { spaceHeld = false; $('jump').classList.toggle('is-held', pointer !== null); } });
+  function autoPause() { pause(); }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); sync(); });
   for (const event of ['blur', 'pagehide', 'orientationchange']) window.addEventListener(event, autoPause);
+  document.addEventListener('freeze', autoPause);
   screen.orientation?.addEventListener('change', autoPause);
   let landscape = innerWidth > innerHeight;
-  window.addEventListener('resize', () => { const next = innerWidth > innerHeight; if (next !== landscape) autoPause(); landscape = next; });
+  window.addEventListener('resize', () => { const next = innerWidth > innerHeight; if (next !== landscape || portraitRequired()) autoPause(); landscape = next; sync(); });
   function line(points, color, width = 3) { ctx.strokeStyle = color; ctx.lineWidth = width; ctx.beginPath(); points.forEach(([x,y],i) => i ? ctx.lineTo(x,y) : ctx.moveTo(x,y)); ctx.stroke(); }
   function draw() {
     ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.fillStyle = '#141d34'; ctx.fillRect(0, 0, 360, 360);
