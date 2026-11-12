@@ -12,6 +12,11 @@
   const feedback = document.querySelector('#feedback');
   const startButton = document.querySelector('#start');
   const retryButton = document.querySelector('#retry');
+  const pauseButton = document.querySelector('#pause');
+  const resumeButton = document.querySelector('#resume');
+  const pauseOverlay = document.querySelector('#pause-overlay');
+  const landscapeTouch = matchMedia('(orientation: landscape) and (pointer: coarse)');
+  let spaceDown = false;
   const STORAGE_KEY = 'my-arcade.stack-tower.best';
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const colors = ['#7ce8e5', '#83bcff', '#b699f0', '#ff91c3', '#ffb282', '#f4df86'];
@@ -58,6 +63,29 @@
     canvas.height = Math.round(height * dpr);
     if (!tower.length) tower = [base()];
   }
+  function syncPause() {
+    pauseButton.disabled = state !== 'PLAYING';
+    pauseOverlay.hidden = state !== 'PAUSED';
+    resumeButton.disabled = document.hidden || landscapeTouch.matches;
+  }
+  function pause() {
+    if (state !== 'PLAYING') return;
+    state = 'PAUSED';
+    previousTime = null;
+    syncPause();
+    resumeButton.focus({ preventScroll: true });
+  }
+  function resume() {
+    if (state !== 'PAUSED' || document.hidden || landscapeTouch.matches) return;
+    state = 'PLAYING';
+    previousTime = null;
+    syncPause();
+    canvas.focus({ preventScroll: true });
+  }
+  function orientationChanged() {
+    pause();
+    syncPause();
+  }
   function start() {
     state = 'PLAYING';
     score = 0;
@@ -71,6 +99,7 @@
     previousTime = null;
     startScreen.hidden = overScreen.hidden = true;
     updateScores();
+    syncPause();
     canvas.focus({ preventScroll: true });
   }
   function fragment(block, cut = block) {
@@ -81,6 +110,7 @@
     fragment(moving);
     moving = null;
     state = 'GAME_OVER';
+    syncPause();
     failTime = 0.45;
     feedback.textContent = '';
     perfectTime = 0;
@@ -163,17 +193,20 @@
     stage.style.borderColor = failTime > 0 ? '#ff6499' : '#4b445f';
   }
   function frame(now) {
-    // Pause hidden tabs and cap stall recovery to avoid an unreactable jump.
+    // A suspended frame must not advance any part of the playing world.
+    if (previousTime !== null && now - previousTime > 1000) pause();
     const seconds = previousTime === null ? 0 : Math.min((now - previousTime) / 1000, 0.05);
     previousTime = now;
     if (!document.hidden) {
       if (dpr !== (window.devicePixelRatio || 1)) resize();
-      update(seconds);
+      if (state !== 'PAUSED') update(seconds);
       draw();
     }
     requestAnimationFrame(frame);
   }
 
+  pauseButton.addEventListener('click', pause);
+  resumeButton.addEventListener('click', resume);
   startButton.addEventListener('click', start);
   retryButton.addEventListener('click', start);
   // Use one pointer event path, never a touchstart + synthetic click pair.
@@ -185,13 +218,30 @@
   });
   document.addEventListener('keydown', event => {
     if (event.code !== 'Space' || event.altKey || event.ctrlKey || event.metaKey) return;
+    const repeated = event.repeat || spaceDown;
+    spaceDown = true;
+    if (repeated) { event.preventDefault(); return; }
     // Native button keyboard activation is handled by its click listener.
     if (event.target.closest('button, a')) return;
     event.preventDefault();
-    if (event.repeat) return;
     if (state === 'PLAYING') place(performance.now());
   });
-  document.addEventListener('visibilitychange', () => { previousTime = null; });
+  document.addEventListener('keyup', event => {
+    if (event.code === 'Space') spaceDown = false;
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pause();
+    previousTime = null;
+    syncPause();
+  });
+  window.addEventListener('blur', () => { spaceDown = false; pause(); });
+  window.addEventListener('pagehide', pause);
+  window.addEventListener('pageshow', () => { pause(); syncPause(); });
+  document.addEventListener('freeze', pause);
+  document.addEventListener('resume', () => { pause(); syncPause(); });
+  window.addEventListener('orientationchange', orientationChanged);
+  screen.orientation?.addEventListener('change', orientationChanged);
+  landscapeTouch.addEventListener('change', orientationChanged);
   new ResizeObserver(resize).observe(stage);
   resize();
   updateScores();

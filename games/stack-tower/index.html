@@ -14,7 +14,7 @@
   <main class="cabinet">
     <header><a href="../../index.html" class="home">← MY ARCADE</a><span class="tag">TIMING / 01</span></header>
     <div class="marquee"><span aria-hidden="true">✦</span><h1>STACK TOWER</h1><span aria-hidden="true">✦</span></div>
-    <div class="hud"><div>SCORE <strong id="score">0</strong></div><div>BEST <strong id="best">0</strong></div></div>
+    <div class="hud"><div>SCORE <strong id="score">0</strong></div><div>BEST <strong id="best">0</strong></div><button id="pause" type="button" disabled>PAUSE</button></div>
     <div class="stage" id="stage">
       <canvas id="game" tabindex="0" aria-label="積み上げエリア。タップ、クリック、Spaceキーでブロックを設置。">Canvasに対応したブラウザーでプレイしてください。</canvas>
       <section class="overlay" id="start-screen" aria-labelledby="start-title">
@@ -32,6 +32,13 @@
         <p class="hint">BEST <span id="final-best">0</span></p>
         <button id="retry" type="button">RETRY <span aria-hidden="true">↻</span></button>
         <a class="return" href="../../index.html">← MY ARCADEへ戻る</a>
+      </section>
+      <section class="pause-overlay" id="pause-overlay" aria-labelledby="pause-title" hidden>
+        <div class="pause-panel">
+          <h2 id="pause-title">PAUSED</h2>
+          <button id="resume" type="button">RESUME</button>
+          <a id="pause-home" href="../../index.html">HOME</a>
+        </div>
       </section>
       <p id="feedback" class="feedback" aria-live="polite"></p>
     </div>
