@@ -34,7 +34,7 @@ const NumberMerge = (() => {
       this.now = now; this.random = random; this.state = 'START';
       this.board = Array(16).fill(0); this.elapsed = 0; this.since = null;
     }
-    time() { return this.since === null ? this.elapsed : this.now() - this.since; }
+    time() { return this.since === null ? this.elapsed : this.elapsed + this.now() - this.since; }
     spawn() {
       const empty = this.board.flatMap((v, i) => v ? [] : [i]);
       if (!empty.length) return null;
@@ -45,6 +45,14 @@ const NumberMerge = (() => {
     start() {
       this.since = this.now(); this.elapsed = 0; this.state = 'PLAYING';
       this.board = Array(16).fill(0); this.spawn(); this.spawn();
+    }
+    pause(at = this.now()) {
+      if (this.state !== 'PLAYING') return;
+      this.elapsed += Math.max(0, at - this.since); this.since = null; this.state = 'PAUSED';
+    }
+    resume() {
+      if (this.state !== 'PAUSED') return;
+      this.since = this.now(); this.state = 'PLAYING';
     }
     finish(state) { this.elapsed = this.time(); this.since = null; this.state = state; }
     move(direction) {

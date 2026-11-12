@@ -72,3 +72,34 @@ test('ランダム盤面1000件×4方向の総和維持・入力不変・出力�
     }
   }
 });
+
+test('PAUSE/RESUMEは累積時計と盤面を保持し、停止時間をCLEAR記録から除外する', () => {
+  let now = 100, calls = 0;
+  const g = new Game({ now: () => now, random: () => { calls++; return 0; } });
+  g.pause(); g.resume(); assert.equal(g.state, 'START'); assert.equal(g.time(), 0);
+  g.start(); const before = plain(g.board), spawned = calls;
+  for (const active of [1234, 567, 8910]) {
+    now += active; const time = g.time(); g.pause();
+    assert.equal(g.state, 'PAUSED'); assert.equal(g.since, null); assert.equal(g.elapsed, time);
+    now += 3600000; g.pause(); assert.equal(g.time(), time);
+    for (const direction of ['left', 'right', 'up', 'down']) assert.equal(g.move(direction).changed, false);
+    assert.deepEqual(plain(g.board), before); assert.equal(calls, spawned);
+    g.resume(); g.resume(); assert.equal(g.time(), time); assert.equal(g.state, 'PLAYING');
+  }
+  assert.equal(g.time(), 10711);
+  now += 29; g.board = row([1024, 1024]); g.move('left');
+  assert.equal(g.state, 'GAME CLEAR'); assert.equal(g.time(), 10740);
+  now += 60000; g.pause(); g.resume(); assert.equal(g.state, 'GAME CLEAR'); assert.equal(g.time(), 10740);
+  g.start(); assert.equal(g.time(), 0); assert.equal(g.elapsed, 0); assert.equal(g.board.filter(Boolean).length, 2);
+});
+test('描画中断は最後の観測時刻で停止し、GAME OVERとRETRYも累積時計を使う', () => {
+  let now = 0; const g = new Game({ now: () => now, random: () => 0 }); g.start();
+  now = 250; const lastFrame = now; now += 60000; g.pause(lastFrame);
+  assert.equal(g.time(), 250); g.pause(); assert.equal(g.time(), 250);
+  now += 30000; g.resume(); now += 150;
+  g.board = [2,4,8,16,32,64,128,256,512,2,4,8,16,32,64,0]; g.move('right');
+  assert.equal(g.state, 'GAME OVER'); assert.equal(g.time(), 400);
+  now += 10000; g.pause(); g.resume(); assert.equal(g.state, 'GAME OVER'); assert.equal(g.time(), 400);
+  g.start(); now += 75; assert.equal(g.time(), 75);
+  g.pause(); g.start(); assert.equal(g.time(), 0); assert.equal(g.state, 'PLAYING');
+});
