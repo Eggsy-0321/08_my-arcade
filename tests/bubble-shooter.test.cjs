@@ -129,3 +129,47 @@ test('再現可能なランダム連続発射で重複・重なり・格子逸�
     }
   }
 });
+
+test('PAUSEDは実行中だけ有効、繰り返し停止でも復帰先を保持しRETRYで破棄', () => {
+  const g = new Game();
+  assert.equal(g.pause(),false); assert.equal(g.resume(),false);
+  g.start(); g.aim(27); assert.equal(g.pause(),true);
+  const snapshot = JSON.stringify(g);
+  g.aim(9); assert.equal(g.shoot(),false); g.update(3600); g.finishResolution(); g.settle(b(0,0),0);
+  assert.equal(JSON.stringify(g),snapshot);
+  assert.equal(g.pause(),false); assert.equal(g.resume(),true); assert.equal(g.state,'PLAYING');
+  assert.equal(g.resume(),false); assert.equal(g.angle,27);
+  g.pause(); g.start(); assert.equal(g.resume(),false);
+  g.board=[b(14,0)]; g.finishResolution(); assert.equal(g.state,'GAME OVER');
+  assert.equal(g.pause(),false); assert.equal(g.resume(),false);
+});
+test('飛行直後・左右反射の前後に停止し、位置・方向・速度と衝突結果を保持', () => {
+  for (const angle of [-70,0,70]) for (const steps of [0,5,6,10]) {
+    const g=game(), reference=game();
+    for (const v of [g,reference]) { v.board=[b(0,0,4)]; v.angle=angle; v.current=4; v.next=4; v.shoot(); for(let i=0;i<steps;i++)v.update(.05); }
+    assert.ok(g.shot); const shot=g.shot, snapshot=JSON.stringify(g);
+    g.pause(); const paused=JSON.stringify(g); for(let i=0;i<10;i++)g.update(3600);
+    assert.equal(JSON.stringify(g),paused); assert.equal(g.shot,shot);
+    assert.equal(g.resume(),true); assert.equal(JSON.stringify(g),snapshot);
+    for(let i=0;i<100;i++) { g.update(.016); reference.update(.016); }
+    assert.equal(JSON.stringify(g),JSON.stringify(reference));
+  }
+});
+test('消去・落下・MISS段追加の演出残時間と得点を保持、復帰後の終了判定は一度だけ', () => {
+  for (const mode of ['clear','miss','over']) {
+    const g=game(), reference=game();
+    for (const v of [g,reference]) {
+      v.board=mode==='clear' ? [b(0,0),b(0,1),b(1,0,1),b(0,8,4)] : [b(mode==='over'?13:0,0,4)];
+      if(mode!=='clear')v.misses=2;
+      v.settle(b(0,2),0); v.update(.12);
+    }
+    assert.equal(g.state,'RESOLVING'); const remaining=g.remaining, effects=g.effects, snapshot=JSON.stringify(g);
+    g.pause(); g.pause(); g.update(7200); g.finishResolution();
+    assert.equal(g.remaining,remaining); assert.equal(g.effects,effects);
+    g.resume(); assert.equal(g.state,'RESOLVING'); assert.equal(JSON.stringify(g),snapshot);
+    g.update(.1); reference.update(.1); assert.equal(g.state,'RESOLVING');
+    g.update(.11); reference.update(.11); assert.equal(JSON.stringify(g),JSON.stringify(reference));
+    assert.equal(g.state,mode==='over'?'GAME OVER':'PLAYING');
+    const score=g.score; g.update(1); assert.equal(g.score,score);
+  }
+});

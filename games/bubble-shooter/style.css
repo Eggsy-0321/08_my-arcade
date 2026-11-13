@@ -8,7 +8,7 @@ a { color: #89eefd; text-decoration: none; }
 header a { padding: 6px 0; }
 .marquee { display: flex; align-items: center; justify-content: space-between; color: #65efff; border-block: 1px solid #305176; padding: 9px 5px; text-shadow: 0 0 16px #21cadb80; }
 h1 { font-size: clamp(18px, 5vw, 25px); letter-spacing: 1px; margin: 0; }
-.hud { display: grid; grid-template-columns: 1fr 1fr; font-size: 10px; letter-spacing: 1px; color: #8b9bbb; }
+.hud { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr) auto; align-items: center; gap: 8px; font-size: 10px; letter-spacing: 1px; color: #8b9bbb; }
 .hud strong { display: block; font-size: 23px; letter-spacing: 0; color: #e7faff; font-variant-numeric: tabular-nums; }
 #score { color: #65efff; }
 .arena { position: relative; flex: 1; min-height: 0; border: 1px solid #36567b; box-shadow: 0 0 24px #2ec2ff12; background: #090f23; }
@@ -32,3 +32,11 @@ footer { justify-content: center; font-size: 9px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 @media (max-height: 650px) { .cabinet { gap: 4px; } .marquee { padding: 5px; } h2 { font-size: 25px; margin: 4px; } .hint { margin-top: 4px; } .eyebrow { display: none; } }
 @media (max-height: 470px) { .cabinet { width: min(100% - 24px, 700px); } header, footer, .marquee, .hint { display: none; } .overlay h2 { font-size: 22px; } .record, #message { margin: 2px; } }
+
+#pause { min-width: 68px; min-height: 44px; padding: 8px; border-color: #65efff; background: #0b1429; color: #65efff; }
+.pause-overlay { position: absolute; z-index: 4; inset: 0; display: grid; place-items: center; padding: 10px; background: rgba(0,0,0,0.7); }
+.pause-panel { display: grid; gap: 12px; width: min(260px, 100%); padding: 20px; text-align: center; background: #0b1429; border: 1px solid #65efff; border-radius: 6px; box-shadow: 0 0 16px #21cadb55; }
+.pause-panel h2 { margin: 0 0 8px; font-size: 32px; color: #65efff; text-shadow: 0 0 12px #21cadb80; }
+.pause-panel button, #pause-home { min-width: 44px; min-height: 44px; padding: 10px; font-size: 16px; }
+#resume { background: #68edfa; border-color: #68edfa; color: #080e20; }
+#pause-home { background: transparent; border-color: #426485; color: #b4c9de; }

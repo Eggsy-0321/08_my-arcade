@@ -14,9 +14,9 @@
 <main class="cabinet">
   <header><a href="../../index.html">← MY ARCADE</a><span>PUZZLE / 04</span></header>
   <div class="marquee"><span>✦</span><h1>BUBBLE SHOOTER</h1><span>✦</span></div>
-  <div class="hud"><div>SCORE<strong id="score">0</strong></div><div>BEST<strong id="best">0</strong></div></div>
+  <div class="hud"><div>SCORE<strong id="score">0</strong></div><div>BEST<strong id="best">0</strong></div><button id="pause" type="button" disabled>PAUSE</button></div>
   <div class="arena">
-    <canvas id="game" width="360" height="560" role="img" aria-label="バブル盤面。LEFT・RIGHTで照準を動かし、SHOOTで発射。"></canvas>
+    <canvas id="game" tabindex="-1" width="360" height="560" role="img" aria-label="バブル盤面。LEFT・RIGHTで照準を動かし、SHOOTで発射。"></canvas>
     <section class="overlay" id="overlay" aria-labelledby="screen-title">
       <p class="eyebrow">SURVIVAL PUZZLE</p><h2 id="screen-title">BUBBLE<br>SHOOTER</h2>
       <p id="message">同じ色を3つつなげて消そう。</p>
@@ -24,6 +24,13 @@
       <button id="start" type="button">START ▶</button>
       <div id="result-actions" hidden><button id="retry" type="button">RETRY ↻</button><a class="button" id="home" href="../../index.html">HOME — MY ARCADEへ戻る</a></div>
       <p class="hint" id="hint">LEFT / RIGHT 長押しで照準移動<br>SHOOTで発射。浮いたバブルは落下！<br>連続ミスで天井に1段追加。時間制限なし。</p>
+    </section>
+    <section class="pause-overlay" id="pause-overlay" aria-labelledby="pause-title" hidden>
+      <div class="pause-panel">
+        <h2 id="pause-title">PAUSED</h2>
+        <button id="resume" type="button">RESUME</button>
+        <a class="button" id="pause-home" href="../../index.html">HOME</a>
+      </div>
     </section>
   </div>
   <p class="instructions"><span id="misses">MISS 0 / 3</span><span>← → / SPACE</span></p>
