@@ -55,6 +55,7 @@ const BubbleShooter = (() => {
   }
   const missLimit = score => score >= 1500 ? 1 : score >= 500 ? 2 : 3;
   class Game {
+    #pausedFrom = null;
     constructor({ random = Math.random } = {}) {
       this.random = random; this.state = 'START'; this.board = []; this.offset = 0;
       this.score = 0; this.misses = 0; this.angle = 0; this.shot = null; this.effects = []; this.current = 0; this.next = 0;
@@ -71,7 +72,16 @@ const BubbleShooter = (() => {
       if (!colors.includes(this.current)) this.current = this.pick(colors);
       if (!colors.includes(this.next)) this.next = this.pick(colors);
     }
+    pause() {
+      if (this.state !== 'PLAYING' && this.state !== 'RESOLVING') return false;
+      this.#pausedFrom = this.state; this.state = 'PAUSED'; return true;
+    }
+    resume() {
+      if (this.state !== 'PAUSED' || this.#pausedFrom === null) return false;
+      this.state = this.#pausedFrom; this.#pausedFrom = null; return true;
+    }
     start() {
+      this.#pausedFrom = null;
       this.score = 0; this.misses = 0; this.angle = 0; this.shot = null; this.effects = []; this.remaining = 0;
       this.generate(); this.current = this.pick(this.colors()); this.next = this.pick(this.colors()); this.state = 'PLAYING';
     }
@@ -90,6 +100,7 @@ const BubbleShooter = (() => {
       this.misses = 0;
     }
     settle(cell, color) {
+      if (this.state === 'PAUSED') return;
       this.shot = null;
       if (!cell) { this.state = 'GAME OVER'; return; }
       const bubble = { ...cell, color }; this.board.push(bubble);
@@ -111,6 +122,7 @@ const BubbleShooter = (() => {
       this.remaining = .32; this.state = 'RESOLVING';
     }
     finishResolution() {
+      if (this.state === 'PAUSED') return;
       this.effects = []; this.remaining = 0;
       this.state = this.board.some(b => position(b,this.offset).y+R >= LIMIT) ? 'GAME OVER' : 'PLAYING';
     }

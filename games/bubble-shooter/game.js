@@ -4,7 +4,11 @@
   const $ = id => document.getElementById(id), canvas = $('game'), ctx = canvas.getContext('2d');
   const game = new Game(), storageKey = 'my-arcade:bubble-shooter:best';
   const palette = ['#ff719e','#65eaff','#ffcf65','#90ed97','#bb95ff'];
+  let scheduledAt = 0;
   let best = 0, frameId = null, last = null, previousState = '', savedScore = 0;
+  const landscapeTouch = matchMedia('(orientation: landscape) and (pointer: coarse)');
+  const keys = new Set();
+  let shootPointer = null;
   const held = new Map(), reduced = matchMedia('(prefers-reduced-motion: reduce)');
   try { const value = Number(localStorage.getItem(storageKey)); if (Number.isFinite(value) && value >= 0) best = Math.floor(value); } catch { /* Session best works without storage. */ }
   function bubble(x,y,color,alpha = 1) {
@@ -44,6 +48,9 @@
     }
     $('score').textContent = String(game.score); $('best').textContent = $('result-best').textContent = String(best);
     $('misses').textContent = `MISS ${game.misses} / ${missLimit(game.score)}`;
+    $('pause').disabled = game.state !== 'PLAYING' && game.state !== 'RESOLVING';
+    $('pause-overlay').hidden = game.state !== 'PAUSED';
+    $('resume').disabled = document.hidden || landscapeTouch.matches;
     const ended = game.state === 'GAME OVER';
     $('overlay').hidden = game.state !== 'START' && !ended;
     $('start').hidden = game.state !== 'START'; $('result-actions').hidden = !ended; $('hint').hidden = ended;
@@ -51,13 +58,13 @@
     $('shoot').disabled = game.state !== 'PLAYING' || !!game.shot;
     if (ended) { $('screen-title').textContent = 'GAME OVER'; $('message').textContent = `FINAL SCORE ${game.score}`; }
     if (game.state !== previousState) {
-      if (ended) { held.clear(); $('status').textContent = `GAME OVER。スコア ${game.score}。BEST ${best}。`; $('retry').focus({preventScroll:true}); }
+      if (ended) { clearInput(); $('status').textContent = `GAME OVER。スコア ${game.score}。BEST ${best}。`; $('retry').focus({preventScroll:true}); }
       previousState = game.state;
     }
   }
   function frame(now) {
     frameId = null;
-    if (document.hidden) { last = null; return; }
+    if (document.hidden || (now-(last ?? scheduledAt) > 1000)) { pause(); return; }
     const dt = last === null ? 0 : Math.min(.05,Math.max(0,(now-last)/1000)); last=now;
     for (const [source,input] of held) {
       input.time += dt;
@@ -67,43 +74,88 @@
     game.update(dt); sync(); draw();
     if (game.state === 'PLAYING' || game.state === 'RESOLVING') wake(); else last = null;
   }
-  function wake() { if (frameId === null && !document.hidden) frameId = requestAnimationFrame(frame); }
+  function wake() {
+    if (frameId === null && !document.hidden) { scheduledAt = performance.now(); frameId = requestAnimationFrame(frame); }
+  }
   function start() {
     if (frameId !== null) cancelAnimationFrame(frameId);
-    frameId=null; last=null; held.clear(); game.start(); sync(); draw(); wake(); $('shoot').focus({preventScroll:true});
+    frameId=null; last=null; clearInput(); game.start(); sync(); draw(); wake(); $('shoot').focus({preventScroll:true});
   }
   function hold(source,direction) {
     if (game.state !== 'PLAYING' || held.has(source)) return;
     held.set(source,{direction,time:0}); game.aim(direction*3); draw(); wake();
   }
+  function clearInput() {
+    // Forget inputs before releasing capture: lostpointercapture can run synchronously.
+    const pointers = [...held.keys()].filter(source => source.startsWith('p'));
+    held.clear(); keys.clear(); shootPointer = null;
+    for (const source of pointers) for (const id of ['left','right']) {
+      const button = $(id), pointerId = Number(source.slice(1));
+      if (button.hasPointerCapture(pointerId)) button.releasePointerCapture(pointerId);
+    }
+  }
+  function pause() {
+    const changed = game.pause();
+    clearInput();
+    if (frameId !== null) cancelAnimationFrame(frameId);
+    frameId = null; last = null; sync(); draw();
+    if (changed && !document.hidden) $('resume').focus({preventScroll:true});
+  }
+  function resume() {
+    if (document.hidden || landscapeTouch.matches || !game.resume()) return;
+    clearInput(); last = null; sync(); draw(); wake(); canvas.focus({preventScroll:true});
+  }
+  function inputReady() {
+    // Input can arrive before the first frame following a suspended browser.
+    if (document.hidden || ((game.state === 'PLAYING' || game.state === 'RESOLVING') && performance.now()-(last ?? scheduledAt) > 1000)) pause();
+    return game.state === 'PLAYING';
+  }
   for (const [id,direction] of [['left',-1],['right',1]]) {
     const button=$(id);
     button.addEventListener('pointerdown',e => {
-      if (e.button !== 0) return; e.preventDefault(); button.setPointerCapture(e.pointerId); hold(`p${e.pointerId}`,direction);
+      if (e.button !== 0 || !inputReady()) return;
+      e.preventDefault(); button.setPointerCapture(e.pointerId); hold(`p${e.pointerId}`,direction);
     });
     for (const type of ['pointerup','pointercancel','lostpointercapture']) button.addEventListener(type,e => held.delete(`p${e.pointerId}`));
-    // Keyboard and assistive-technology activation generates a click with detail 0.
-    button.addEventListener('click',e => { if (e.detail === 0) { game.aim(direction*3); draw(); } });
+    // Keep keyboard and assistive-technology click activation (detail 0).
+    button.addEventListener('click',e => { if (e.detail === 0 && inputReady()) { game.aim(direction*3); draw(); } });
     button.addEventListener('contextmenu',e => e.preventDefault());
   }
-  $('shoot').addEventListener('click',() => { if (game.shoot()) { sync(); wake(); } });
+  $('shoot').addEventListener('pointerdown',e => {
+    shootPointer = e.button === 0 && inputReady() ? e.pointerId : null;
+  });
+  $('shoot').addEventListener('pointercancel',() => { shootPointer = null; });
+  $('shoot').addEventListener('click',e => {
+    const fresh = e.detail === 0 || (shootPointer !== null && e.pointerId === shootPointer);
+    shootPointer = null;
+    if (fresh && inputReady() && game.shoot()) { sync(); wake(); }
+  });
+  $('pause').addEventListener('click',pause); $('resume').addEventListener('click',resume);
   $('start').addEventListener('click',start); $('retry').addEventListener('click',start);
   document.addEventListener('keydown',e => {
     if (e.altKey || e.ctrlKey || e.metaKey || e.target.closest('input,textarea,select')) return;
-    if (!['ArrowLeft','ArrowRight','Space'].includes(e.code) || game.state !== 'PLAYING') return;
+    if (!['ArrowLeft','ArrowRight','Space','Enter'].includes(e.code)) return;
+    const repeated = e.repeat || keys.has(e.code); keys.add(e.code);
+    if (repeated) { e.preventDefault(); return; }
+    if (e.code === 'Enter') return;
+    // Let native activation operate PAUSE/RESUME/HOME without shooting.
+    if (e.target.closest('#pause,#resume,a,#start,#retry')) return;
     e.preventDefault();
-    if (e.code === 'Space') { if (!e.repeat) { game.shoot(); sync(); wake(); } }
+    if (!inputReady()) return;
+    if (e.code === 'Space') { game.shoot(); sync(); wake(); }
     else hold(e.code,e.code === 'ArrowLeft' ? -1 : 1);
   });
-  document.addEventListener('keyup',e => held.delete(e.code));
-  window.addEventListener('blur',() => { held.clear(); last=null; });
-  document.addEventListener('visibilitychange',() => {
-    held.clear(); last=null;
-    if (document.hidden && frameId !== null) { cancelAnimationFrame(frameId); frameId=null; }
-    else if (game.state === 'PLAYING' || game.state === 'RESOLVING') wake();
-  });
-  window.addEventListener('pagehide',() => { held.clear(); if (frameId !== null) cancelAnimationFrame(frameId); frameId=null; last=null; });
-  window.addEventListener('pageshow',() => { if (game.state === 'PLAYING' || game.state === 'RESOLVING') wake(); });
+  document.addEventListener('keyup',e => { keys.delete(e.code); held.delete(e.code); });
+  window.addEventListener('blur',pause);
+  document.addEventListener('visibilitychange',() => { if (document.hidden) pause(); else sync(); });
+  window.addEventListener('pagehide',pause);
+  window.addEventListener('pageshow',pause);
+  document.addEventListener('freeze',pause);
+  document.addEventListener('resume',pause);
+  function orientationChanged() { pause(); sync(); }
+  window.addEventListener('orientationchange',orientationChanged);
+  screen.orientation?.addEventListener('change',orientationChanged);
+  landscapeTouch.addEventListener('change',orientationChanged);
   function resize() {
     const dpr=Math.min(devicePixelRatio || 1,3); canvas.width=W*dpr; canvas.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); draw();
   }
